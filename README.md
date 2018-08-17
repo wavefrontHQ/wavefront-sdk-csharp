@@ -44,11 +44,11 @@ wavefrontProxyClient.SendMetric("new-york.power.usage", 42422.0, 1533529977L, "l
  *
  * Example: You can choose to send to atmost 3 bins - Minute/Hour/Day
  * 1) Send to minute bin    =>    
- *    "!M 1533529977 #20 30.0 #10 5.1 request.latency source=appServer1 region=us-west"
+ *    "!M 1533529977 #20 30 #10 5.1 request.latency source=appServer1 region=us-west"
  * 2) Send to hour bin      =>    
- *    "!H 1533529977 #20 30.0 #10 5.1 request.latency source=appServer1 region=us-west"
+ *    "!H 1533529977 #20 30 #10 5.1 request.latency source=appServer1 region=us-west"
  * 3) Send to day bin       =>    
- *    "!D 1533529977 #20 30.0 #10 5.1 request.latency source=appServer1 region=us-west"
+ *    "!D 1533529977 #20 30 #10 5.1 request.latency source=appServer1 region=us-west"
  */
 wavefrontProxyClient.SendDistribution(
     "request.latency",
@@ -144,11 +144,11 @@ wavefrontDirectIngestionClient.SendMetric("new-york.power.usage", 42422.0, 15335
  *
  * Example: You can choose to send to atmost 3 bins - Minute/Hour/Day
  * 1) Send to minute bin    =>    
- *    "!M 1533529977 #20 30.0 #10 5.1 request.latency source=appServer1 region=us-west"
+ *    "!M 1533529977 #20 30 #10 5.1 request.latency source=appServer1 region=us-west"
  * 2) Send to hour bin      =>    
- *    "!H 1533529977 #20 30.0 #10 5.1 request.latency source=appServer1 region=us-west"
+ *    "!H 1533529977 #20 30 #10 5.1 request.latency source=appServer1 region=us-west"
  * 3) Send to day bin       =>    
- *    "!D 1533529977 #20 30.0 #10 5.1 request.latency source=appServer1 region=us-west"
+ *    "!D 1533529977 #20 30 #10 5.1 request.latency source=appServer1 region=us-west"
  */
 wavefrontDirectIngestionClient.SendDistribution(
     "request.latency",
