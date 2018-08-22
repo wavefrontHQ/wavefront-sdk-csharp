@@ -136,7 +136,7 @@ wavefrontProxyClient.Close();
 /*
  * Assume you have a running Wavefront cluster and you know the 
  * server URL (example - https://mydomain.wavefront.com) and the API token
- */s
+ */
 var builder = new WavefrontDirectIngestionClient.Builder(wavefrontServer, token);
 
 // set this if you want to change the default max queue size of 50,000
