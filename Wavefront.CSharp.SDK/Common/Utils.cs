@@ -83,7 +83,7 @@ namespace Wavefront.CSharp.SDK.Common
                     {
                         throw new ArgumentException("metric point tag key cannot be blank");
                     }
-                    if (String.IsNullOrWhiteSpace(tag.Key))
+                    if (String.IsNullOrWhiteSpace(tag.Value))
                     {
                         throw new ArgumentException("metric point tag value cannot be blank");
                     }
@@ -103,9 +103,9 @@ namespace Wavefront.CSharp.SDK.Common
         /// <returns>The histogram distribution in Wavefront data format.</returns>
         /// <param name="name">The name of the histogram distribution.</param>
         /// <param name="centroids">
-        /// The distribution of histogram points. Each centroid is a <see cref="KeyValuePair{double, int}"/> where the
-        /// first dimension is the count of points in the centroid and second dimension is the count of points in that
-        /// centroid.
+        /// The distribution of histogram points. Each centroid is a <see cref="KeyValuePair{double, int}"/> where
+        /// the first dimension is the count of points in the centroid and second dimension is the count of points
+        /// in that centroid.
         /// </param>
         /// <param name="histogramGranularities">
         /// The set of intervals (minute, hour, and/or day) by which histogram data should be aggregated.
@@ -182,7 +182,7 @@ namespace Wavefront.CSharp.SDK.Common
                         {
                             throw new ArgumentException("histogram tag key cannot be blank");
                         }
-                        if (String.IsNullOrWhiteSpace(tag.Key))
+                        if (String.IsNullOrWhiteSpace(tag.Value))
                         {
                             throw new ArgumentException("histogram tag value cannot be blank");
                         }

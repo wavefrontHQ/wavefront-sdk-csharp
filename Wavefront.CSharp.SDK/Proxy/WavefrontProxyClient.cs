@@ -12,10 +12,11 @@ using Wavefront.CSharp.SDK.Entities.Tracing;
 namespace Wavefront.CSharp.SDK.Integrations
 {
     /// <summary>
-    /// Client that sends data directly via TCP to the Wavefront Proxy Agent. User should probably attempt to reconnect
-    /// when exceptions are thrown from any methods.
+    /// Client that sends data directly via TCP to the Wavefront Proxy Agent. User should probably attempt to
+    /// reconnect when exceptions are thrown from any methods.
     /// </summary>
-    public class WavefrontProxyClient : IWavefrontMetricSender, IWavefrontHistogramSender, IWavefrontTracingSpanSender, IBufferFlusher
+    public class WavefrontProxyClient
+        : IWavefrontMetricSender, IWavefrontHistogramSender, IWavefrontTracingSpanSender, IBufferFlusher
     {
         private static readonly ILogger Logger = Logging.LoggerFactory.CreateLogger<WavefrontProxyClient>();
 
@@ -61,7 +62,9 @@ namespace Wavefront.CSharp.SDK.Integrations
             /// Enables sending of distributions to Wavefront cluster via proxy.
             /// </summary>
             /// <returns><see cref="this"/></returns>
-            /// <param name="distributionPort">The distribution port on which the Wavefront proxy is listening.</param>
+            /// <param name="distributionPort">
+            /// The distribution port on which the Wavefront proxy is listening.
+            /// </param>
             public Builder DistributionPort(int distributionPort)
             {
                 this.distributionPort = distributionPort;
@@ -319,8 +322,8 @@ namespace Wavefront.CSharp.SDK.Integrations
         }
 
         /// <summary>
-        /// Flushes one last time before stopping the flushing of points on a regular interval. Closes the connection
-        /// to the Wavefront proxy.
+        /// Flushes one last time before stopping the flushing of points on a regular interval. Closes the
+        /// connection to the Wavefront proxy.
         /// </summary>
         public void Close()
         {

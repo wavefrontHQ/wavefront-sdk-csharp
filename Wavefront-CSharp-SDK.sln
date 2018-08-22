@@ -20,4 +20,12 @@ Global
 		{2843F32B-90B0-44AE-87D9-F1BD3442A7C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2843F32B-90B0-44AE-87D9-F1BD3442A7C6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		Policies = $0
+		$0.TextStylePolicy = $1
+		$1.TabsToSpaces = True
+		$1.scope = text/x-csharp
+		$0.CSharpFormattingPolicy = $2
+		$2.scope = text/x-csharp
+	EndGlobalSection
 EndGlobal

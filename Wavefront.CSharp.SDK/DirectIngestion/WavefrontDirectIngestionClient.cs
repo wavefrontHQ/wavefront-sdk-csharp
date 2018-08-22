@@ -16,10 +16,12 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
     /// <summary>
     /// Wavefront direct ingestion client that sends data directly to Wavefront cluster via the direct ingestion API.
     /// </summary>
-    public class WavefrontDirectIngestionClient : IWavefrontMetricSender, IWavefrontHistogramSender, IWavefrontTracingSpanSender, IBufferFlusher
+    public class WavefrontDirectIngestionClient
+        : IWavefrontMetricSender, IWavefrontHistogramSender, IWavefrontTracingSpanSender, IBufferFlusher
     {
         private static readonly string DefaultSource = "wavefrontDirectSender";
-        private static readonly ILogger Logger = Logging.LoggerFactory.CreateLogger<WavefrontDirectIngestionClient>();
+        private static readonly ILogger Logger =
+            Logging.LoggerFactory.CreateLogger<WavefrontDirectIngestionClient>();
 
         private volatile int failures = 0;
         private int batchSize;
@@ -101,6 +103,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
                     tracingSpansBuffer = new BlockingCollection<string>(maxQueueSize),
                     directService = new DataIngesterService(server, token)
                 };
+
                 client.timer = new Timer(client.Run, null, 1000, flushIntervalSeconds * 1000);
                 return client;
             }

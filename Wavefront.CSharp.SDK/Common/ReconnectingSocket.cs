@@ -72,26 +72,30 @@ namespace Wavefront.CSharp.SDK.Common
                     Logger.Log(LogLevel.Warning, "Could not close old socket.", e);
                 }
                 socketOutputStream = new BufferedStream(client.GetStream(), bufferSize);
-                Logger.Log(LogLevel.Information, String.Format("Successfully reset connection to {0}:{1}", host, port));
+                Logger.Log(LogLevel.Information,
+                           String.Format("Successfully reset connection to {0}:{1}", host, port));
             }
         }
 
         /// <summary>
-        /// Try to send the given message. On failure, reset and try again. If that fails, just rethrow the exception.
+        /// Try to send the given message. On failure, reset and try again.
+        /// If that fails, just rethrow the exception.
         /// </summary>
         /// <param name="message">The message to be sent to the Wavefront proxy.</param>
         public void Write(string message)
         {
+            var bytes = Encoding.UTF8.GetBytes(message);
             try
             {
                 // Might be NPE due to previously failed call to ResetSocket.
-                socketOutputStream.Write(Encoding.UTF8.GetBytes(message), 0, message.Length);
+
+                socketOutputStream.Write(bytes, 0, bytes.Length);
             }
             catch (Exception e)
             {
                 Logger.Log(LogLevel.Warning, "Attempting to reset socket connection.", e);
                 ResetSocket();
-                socketOutputStream.Write(Encoding.UTF8.GetBytes(message), 0, message.Length);
+                socketOutputStream.Write(bytes, 0, bytes.Length);
             }
         }
 

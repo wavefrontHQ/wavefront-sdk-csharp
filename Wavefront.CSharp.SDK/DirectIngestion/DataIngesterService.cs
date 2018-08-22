@@ -17,8 +17,8 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         private readonly Uri uri;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="T:Wavefront.CSharp.SDK.DirectIngestion.DataIngesterService"/>
-        /// class.
+        /// Initializes a new instance of the
+        /// <see cref="T:Wavefront.CSharp.SDK.DirectIngestion.DataIngesterService"/> class.
         /// </summary>
         /// <param name="server">A Wavefront server URL of the form "https://clusterName.wavefront.com".</param>
         /// <param name="token">A valid API token with direct ingestion permissions.</param>
@@ -63,7 +63,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
             {
             }
 
-            var statusCode = (int)HttpStatusCode.BadRequest;
+            int statusCode = (int)HttpStatusCode.BadRequest;
             if (response != null)
             {
                 statusCode = (int)response.StatusCode;

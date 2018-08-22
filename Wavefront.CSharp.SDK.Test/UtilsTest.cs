@@ -16,11 +16,11 @@ namespace Wavefront.CSharp.SDK.Test
         [Fact]
         public void TestSanitize()
         {
-            Assert.Equal("\"hello\"", Utils.Sanitize("hello"));
-            Assert.Equal("\"hello-world\"", Utils.Sanitize("hello world"));
-            Assert.Equal("\"hello.world\"", Utils.Sanitize("hello.world"));
-            Assert.Equal("\"hello\\\"world\\\"\"", Utils.Sanitize("hello\"world\""));
-            Assert.Equal("\"hello'world\"", Utils.Sanitize("hello'world"));
+            Assert.Equal(@"""hello""", Utils.Sanitize("hello"));
+            Assert.Equal(@"""hello-world""", Utils.Sanitize("hello world"));
+            Assert.Equal(@"""hello.world""", Utils.Sanitize("hello.world"));
+            Assert.Equal(@"""hello\""world\""""", Utils.Sanitize("hello\"world\""));
+            Assert.Equal(@"""hello'world""", Utils.Sanitize("hello'world"));
         }
 
         [Fact]
@@ -51,7 +51,10 @@ namespace Wavefront.CSharp.SDK.Test
             Assert.Equal("!M 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" " +
                     "\"region\"=\"us-west\"\n", Utils.HistogramToLineData(
                              "request.latency",
-                             ImmutableList.Create(new KeyValuePair<double, int>(30.0, 20), new KeyValuePair<double, int>(5.1, 10)),
+                             ImmutableList.Create(
+                                 new KeyValuePair<double, int>(30.0, 20),
+                                 new KeyValuePair<double, int>(5.1, 10)
+                             ),
                              ImmutableHashSet.Create(HistogramGranularity.Minute),
                              1493773500L, "appServer1",
                              new Dictionary<string, string>{ { "region", "us-west"} }.ToImmutableDictionary(),
@@ -61,7 +64,10 @@ namespace Wavefront.CSharp.SDK.Test
             Assert.Equal("!M #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" " +
                     "\"region\"=\"us-west\"\n", Utils.HistogramToLineData(
                              "request.latency",
-                             ImmutableList.Create(new KeyValuePair<double, int>(30.0, 20), new KeyValuePair<double, int>(5.1, 10)),
+                             ImmutableList.Create(
+                                 new KeyValuePair<double, int>(30.0, 20),
+                                 new KeyValuePair<double, int>(5.1, 10)
+                             ),
                              ImmutableHashSet.Create(HistogramGranularity.Minute),
                              null, "appServer1",
                              new Dictionary<string, string> { { "region", "us-west" } }.ToImmutableDictionary(),
@@ -71,7 +77,10 @@ namespace Wavefront.CSharp.SDK.Test
             Assert.Equal("!M 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\"\n",
                 Utils.HistogramToLineData(
                              "request.latency",
-                             ImmutableList.Create(new KeyValuePair<double, int>(30.0, 20), new KeyValuePair<double, int>(5.1, 10)),
+                             ImmutableList.Create(
+                                 new KeyValuePair<double, int>(30.0, 20),
+                                 new KeyValuePair<double, int>(5.1, 10)
+                             ),
                              ImmutableHashSet.Create(HistogramGranularity.Minute),
                              1493773500L, "appServer1", null, "defaultSource"));
 
@@ -85,21 +94,33 @@ namespace Wavefront.CSharp.SDK.Test
             // no histogram granularity specified
             Assert.Throws<ArgumentException>(() => Utils.HistogramToLineData(
                 "request.latency",
-                ImmutableList.Create(new KeyValuePair<double, int>(30.0, 20), new KeyValuePair<double, int>(5.1, 10)),
+                ImmutableList.Create(
+                    new KeyValuePair<double, int>(30.0, 20),
+                    new KeyValuePair<double, int>(5.1, 10)
+                ),
                 ImmutableHashSet.Create<HistogramGranularity>(),
                 1493773500L, "appServer1", null, "defaultSource"));
 
             // multiple granularities
-            Assert.Equal("!M 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" \"region\"=\"us-west\"\n" +
-                    "!H 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" \"region\"=\"us-west\"\n" +
-                    "!D 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" \"region\"=\"us-west\"\n",
+            Assert.Equal(
+                "!M 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" \"region\"=\"us-west\"\n" +
+                "!H 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" \"region\"=\"us-west\"\n" +
+                "!D 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" \"region\"=\"us-west\"\n",
                 Utils.HistogramToLineData(
-                             "request.latency",
-                             ImmutableList.Create(new KeyValuePair<double, int>(30.0, 20), new KeyValuePair<double, int>(5.1, 10)),
-                             ImmutableSortedSet.Create(HistogramGranularity.Minute, HistogramGranularity.Hour, HistogramGranularity.Day),
-                             1493773500L, "appServer1",
-                             new Dictionary<string, string> { { "region", "us-west" } }.ToImmutableDictionary(),
-                             "defaultSource"));
+                    "request.latency",
+                    ImmutableList.Create(
+                        new KeyValuePair<double, int>(30.0, 20),
+                        new KeyValuePair<double, int>(5.1, 10)
+                    ),
+                    ImmutableSortedSet.Create(
+                        HistogramGranularity.Minute,
+                        HistogramGranularity.Hour,
+                        HistogramGranularity.Day
+                    ),
+                    1493773500L, "appServer1",
+                    new Dictionary<string, string> { { "region", "us-west" } }.ToImmutableDictionary(),
+                    "defaultSource"
+                ));
         }
 
         [Fact]
@@ -118,7 +139,10 @@ namespace Wavefront.CSharp.SDK.Test
                              new Guid("0313bafe-9457-11e8-9eb6-529269fb1459"),
                              ImmutableList.Create(new Guid("2f64e538-9457-11e8-9eb6-529269fb1459")),
                              ImmutableList.Create(new Guid("5f64e538-9457-11e8-9eb6-529269fb1459")),
-                             ImmutableList.Create(new KeyValuePair<string, string>("application", "Wavefront"), new KeyValuePair<string, string>("http.method", "GET")),
+                             ImmutableList.Create(
+                                 new KeyValuePair<string, string>("application", "Wavefront"),
+                                 new KeyValuePair<string, string>("http.method", "GET")
+                             ),
                              null, "defaultSource"));
 
             // null followsFrom
@@ -134,7 +158,10 @@ namespace Wavefront.CSharp.SDK.Test
                              new Guid("0313bafe-9457-11e8-9eb6-529269fb1459"),
                              ImmutableList.Create(new Guid("2f64e538-9457-11e8-9eb6-529269fb1459")),
                              null,
-                             ImmutableList.Create(new KeyValuePair<string, string>("application", "Wavefront"), new KeyValuePair<string, string>("http.method", "GET")),
+                             ImmutableList.Create(
+                                 new KeyValuePair<string, string>("application", "Wavefront"),
+                                 new KeyValuePair<string, string>("http.method", "GET")
+                             ),
                              null, "defaultSource"));
 
             // root span
@@ -148,7 +175,10 @@ namespace Wavefront.CSharp.SDK.Test
                              new Guid("7b3bf470-9456-11e8-9eb6-529269fb1459"),
                              new Guid("0313bafe-9457-11e8-9eb6-529269fb1459"),
                              null, null,
-                             ImmutableList.Create(new KeyValuePair<string, string>("application", "Wavefront"), new KeyValuePair<string, string>("http.method", "GET")),
+                             ImmutableList.Create(
+                                 new KeyValuePair<string, string>("application", "Wavefront"),
+                                 new KeyValuePair<string, string>("http.method", "GET")
+                             ),
                              null, "defaultSource"));
 
             // null tags

@@ -19,6 +19,7 @@ namespace Wavefront.CSharp.SDK.Entities.Events
         /// The source (or host) that's sending the event. If null, then assigned by Wavefront.
         /// </param>
         /// <param name="tags">The tags associated with this event.</param>
-        void SendEvent(string name, long startMillis, long endMillis, string source, IDictionary<string, string> tags);
+        void SendEvent(string name, long startMillis, long endMillis, string source,
+                       IDictionary<string, string> tags);
     }
 }

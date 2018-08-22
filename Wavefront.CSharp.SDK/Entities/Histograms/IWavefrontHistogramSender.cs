@@ -16,8 +16,8 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
         /// </param>
         /// <param name="centroids">
         /// The distribution of histogram points to be sent. Each centroid is a 2-dimensional
-        /// <see cref="KeyValuePair{double, int}"/> where the first dimension is the mean value(Double) of the centroid
-        /// and second dimension is the count of points in that centroid.
+        /// <see cref="KeyValuePair{double, int}"/> where the first dimension is the mean value(Double) of the
+        /// centroid and second dimension is the count of points in that centroid.
         /// </param>
         /// <param name="histogramGranularities">
         /// The set of intervals (minute, hour, and/or day) by which histogram data should be aggregated.

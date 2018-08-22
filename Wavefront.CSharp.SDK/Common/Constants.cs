@@ -8,16 +8,27 @@
         /// <summary>
         /// Use this format to send metric data to Wavefront.
         /// </summary>
-        public static readonly string WavefrontMetricFormat = "wavefront";
+        public const string WavefrontMetricFormat = "wavefront";
 
         /// <summary>
         /// Use this format to send histogram data to Wavefront.
         /// </summary>
-        public static readonly string WavefrontHistogramFormat = "histogram";
+        public const string WavefrontHistogramFormat = "histogram";
 
         /// <summary>
         /// Use this format to send tracing data to Wavefront.
         /// </summary>
-        public static readonly string WavefrontTracingSpanFormat = "trace";
+        public const string WavefrontTracingSpanFormat = "trace";
+
+
+        /// <summary>
+        /// ∆: INCREMENT
+        /// </summary>
+        public const string DeltaPrefix = "\u2206";
+
+        /// <summary>
+        /// Δ: GREEK CAPITAL LETTER DELTA
+        /// </summary>
+        public const string DeltaPrefix2 = "\u0394";
     }
 }

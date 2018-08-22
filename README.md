@@ -2,6 +2,11 @@
 
 This package provides support for sending metrics, histograms and opentracing spans to Wavefront via proxy or direct ingestion.
 
+## Dependencies
+  * .NET Standard (>= 2.0)
+  * Microsoft.Extensions.Logging (>= 2.1.1)
+  * Microsoft.Extensions.Logging.Debug (>= 2.1.1)
+
 ## Usage
 
 ### Send data to Wavefront via Proxy
@@ -22,7 +27,7 @@ builder.DistributionPort(distributionPort);
 builder.TracingPort(tracingPort);
 
 /* set this if you want to change the default flush interval of 5 seconds */
-builder.FlushIntervalSeconds(2);
+builder.FlushIntervalSeconds(30);
 
 var wavefrontProxyClient = builder.Build();
 
@@ -33,10 +38,29 @@ var wavefrontProxyClient = builder.Build();
  *
  * Example: "new-york.power.usage 42422 1533529977 source=localhost datacenter=dc1"
  */
-wavefrontProxyClient.SendMetric("new-york.power.usage", 42422.0, 1533529977L, "localhost",
-                                ImmutableDictionary.Create<string, string>());
+wavefrontProxyClient.SendMetric(
+    "new-york.power.usage",
+    42422.0,
+    1533529977L,
+    "localhost",
+    new Dictionary<string, string> { { "datacenter", "dc1" } }.ToImmutableDictionary()
+);
 
-// 2) Send Direct Distribution (Histogram) to Wavefront
+// 2) Send Delta Counter to Wavefront     
+/*
+ * Wavefront Delta Counter format
+ * <metricName> <metricValue> source=<source> [pointTags]
+ *
+ * Example: "lambda.thumbnail.generate 10 source=lambda_thumbnail_service image-format=jpeg"
+ */
+wavefrontProxyClient.SendDeltaCounter(
+    "lambda.thumbnail.generate",
+    10,
+    "lambda_thumbnail_service",
+    new Dictionary<string, string> { { "image-format", "jpeg" } }.ToImmutableDictionary()
+);
+
+// 3) Send Direct Distribution (Histogram) to Wavefront
 /*
  * Wavefront Histogram Data format
  * {!M | !H | !D} [<timestamp>] #<count> <mean> [centroids] <histogramName> source=<source> 
@@ -66,7 +90,7 @@ wavefrontProxyClient.SendDistribution(
     new Dictionary<string, string> { { "region", "us-west" } }.ToImmutableDictionary()
 );
 
-// 3) Send OpenTracing Span to Wavefront
+// 4) Send OpenTracing Span to Wavefront
 /*
  * Wavefront Tracing Span Data format
  * <tracingSpanName> source=<source> [pointTags] <start_millis> <duration_milliseconds>
@@ -98,7 +122,7 @@ wavefrontProxyClient.SendSpan(
  * If there are any failures observed while sending metrics/histograms/tracing-spans above, 
  * you get the total failure count using the below API
  */
-var totalFailures = wavefrontProxyClient.GetFailureCount();
+int totalFailures = wavefrontProxyClient.GetFailureCount();
 
 /* on-demand buffer flush */
 wavefrontProxyClient.Flush();
@@ -133,10 +157,29 @@ var wavefrontDirectIngestionClient = builder.Build();
  *
  * Example: "new-york.power.usage 42422 1533529977 source=localhost datacenter=dc1"
  */
-wavefrontDirectIngestionClient.SendMetric("new-york.power.usage", 42422.0, 1533529977L, "localhost",
-                                          ImmutableDictionary.Create<string, string>());
+wavefrontDirectIngestionClient.SendMetric(
+    "new-york.power.usage",
+    42422.0,
+    1533529977L,
+    "localhost",
+    new Dictionary<string, string> { { "datacenter", "dc1" } }.ToImmutableDictionary()
+);
 
-// 2) Send Direct Distribution (Histogram) to Wavefront
+// 2) Send Delta Counter to Wavefront     
+/*
+ * Wavefront Delta Counter format
+ * <metricName> <metricValue> source=<source> [pointTags]
+ *
+ * Example: "lambda.thumbnail.generate 10 source=lambda_thumbnail_service image-format=jpeg"
+ */
+wavefrontDirectIngestionClient.SendDeltaCounter(
+   "lambda.thumbnail.generate",
+   10,
+   "lambda_thumbnail_service",
+   new Dictionary<string, string> { { "image-format", "jpeg" } }.ToImmutableDictionary()
+);
+
+// 3) Send Direct Distribution (Histogram) to Wavefront
 /*
  * Wavefront Histogram Data format
  * {!M | !H | !D} [<timestamp>] #<count> <mean> [centroids] <histogramName> source=<source> 
@@ -166,7 +209,7 @@ wavefrontDirectIngestionClient.SendDistribution(
     new Dictionary<string, string> { { "region", "us-west" } }.ToImmutableDictionary()
 );
 
-// 3) Send OpenTracing Span to Wavefront
+// 4) Send OpenTracing Span to Wavefront
 /*
  * Wavefront Tracing Span Data format
  * <tracingSpanName> source=<source> [pointTags] <start_millis> <duration_milliseconds>
@@ -198,7 +241,7 @@ wavefrontDirectIngestionClient.SendSpan(
  * If there are any failures observed while sending metrics/histograms/tracing-spans above, 
  * you get the total failure count using the below API
  */
-var totalFailures = wavefrontDirectIngestionClient.GetFailureCount();
+int totalFailures = wavefrontDirectIngestionClient.GetFailureCount();
 
 /* on-demand buffer flush */
 wavefrontDirectIngestionClient.Flush();
