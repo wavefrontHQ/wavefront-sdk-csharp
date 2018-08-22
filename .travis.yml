@@ -1,0 +1,11 @@
+language: csharp
+solution: Wavefront-CSharp-SDK.sln
+mono: none
+dotnet: 2.1.300
+
+install:
+ - dotnet restore
+
+script:
+ - dotnet build
+ - dotnet test Wavefront.CSharp.SDK.Test/Wavefront.CSharp.SDK.Test.csproj
