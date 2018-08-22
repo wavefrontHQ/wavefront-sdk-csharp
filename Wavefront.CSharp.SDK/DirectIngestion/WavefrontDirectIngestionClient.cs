@@ -8,7 +8,6 @@ using System.Threading;
 using Microsoft.Extensions.Logging;
 using Wavefront.CSharp.SDK.Common;
 using Wavefront.CSharp.SDK.Entities.Histograms;
-using Wavefront.CSharp.SDK.Entities.Metrics;
 using Wavefront.CSharp.SDK.Entities.Tracing;
 
 namespace Wavefront.CSharp.SDK.DirectIngestion
@@ -16,8 +15,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
     /// <summary>
     /// Wavefront direct ingestion client that sends data directly to Wavefront cluster via the direct ingestion API.
     /// </summary>
-    public class WavefrontDirectIngestionClient
-        : IWavefrontMetricSender, IWavefrontHistogramSender, IWavefrontTracingSpanSender, IBufferFlusher
+    public class WavefrontDirectIngestionClient : WavefrontClient
     {
         private static readonly string DefaultSource = "wavefrontDirectSender";
         private static readonly ILogger Logger =
@@ -114,7 +112,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         }
 
         /// <see cref="IWavefrontMetricSender.SendMetric"/>
-        public void SendMetric(string name, double value, long? timestamp, string source,
+        public override void SendMetric(string name, double value, long? timestamp, string source,
                                IDictionary<string, string> tags)
         {
             var lineData = Utils.MetricToLineData(name, value, timestamp, source, tags, DefaultSource);
@@ -126,7 +124,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         }
 
         /// <see cref="IWavefrontHistogramSender.SendDistribution"/>
-        public void SendDistribution(string name, IList<KeyValuePair<double, int>> centroids,
+        public override void SendDistribution(string name, IList<KeyValuePair<double, int>> centroids,
                                      ISet<HistogramGranularity> histogramGranularities, long? timestamp,
                                      string source, IDictionary<string, string> tags)
         {
@@ -139,7 +137,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         }
 
         /// <see cref="IWavefrontTracingSpanSender.SendSpan"/>
-        public void SendSpan(string name, long startMillis, long durationMillis, string source,
+        public override void SendSpan(string name, long startMillis, long durationMillis, string source,
                              Guid traceId, Guid spanId, IList<Guid> parents,
                              IList<Guid> followsFrom, IList<KeyValuePair<string, string>> tags,
                              IList<SpanLog> spanLogs)
@@ -166,7 +164,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         }
 
         /// <see cref="IBufferFlusher.Flush" />
-        public void Flush()
+        public override void Flush()
         {
             InternalFlush(metricsBuffer, Constants.WavefrontMetricFormat);
             InternalFlush(histogramsBuffer, Constants.WavefrontHistogramFormat);
@@ -227,7 +225,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         }
 
         /// <see cref="IBufferFlusher.GetFailureCount" />
-        public int GetFailureCount()
+        public override int GetFailureCount()
         {
             return failures;
         }
@@ -236,7 +234,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         /// Flushes one last time before stopping the flushing of points on a regular interval.
         /// </summary>
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public void Close()
+        public override void Close()
         {
             try
             {
