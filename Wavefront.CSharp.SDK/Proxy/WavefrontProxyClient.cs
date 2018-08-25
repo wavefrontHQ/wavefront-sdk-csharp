@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Threading;
+using System.Timers;
 using Microsoft.Extensions.Logging;
 using Wavefront.CSharp.SDK.Common;
 using Wavefront.CSharp.SDK.Entities.Histograms;
@@ -14,7 +14,7 @@ namespace Wavefront.CSharp.SDK.Integrations
     /// Client that sends data directly via TCP to the Wavefront Proxy Agent. User should probably attempt to
     /// reconnect when exceptions are thrown from any methods.
     /// </summary>
-    public class WavefrontProxyClient : WavefrontClient
+    public class WavefrontProxyClient : IWavefrontSender
     {
         private static readonly ILogger Logger = Logging.LoggerFactory.CreateLogger<WavefrontProxyClient>();
 
@@ -131,7 +131,10 @@ namespace Wavefront.CSharp.SDK.Integrations
                         proxyHostName, tracingPort.Value);
                 }
 
-                client.timer = new Timer(client.Run, null, 1000, flushIntervalSeconds * 1000);
+                client.timer = new Timer(flushIntervalSeconds * 1000);
+                client.timer.Elapsed += client.Run;
+                client.timer.Enabled = true;
+
                 return client;
             }
         }
@@ -140,8 +143,8 @@ namespace Wavefront.CSharp.SDK.Integrations
         {
         }
 
-        /// <see cref="IWavefrontMetricSender.SendMetric"/>
-        public override void SendMetric(string name, double value, long? timestamp, string source,
+        /// <see cref="Entities.Metrics.IWavefrontMetricSender.SendMetric"/>
+        public void SendMetric(string name, double value, long? timestamp, string source,
                                IDictionary<string, string> tags)
         {
             if (metricsProxyConnectionHandler == null)
@@ -181,7 +184,7 @@ namespace Wavefront.CSharp.SDK.Integrations
         }
 
         /// <see cref="IWavefrontHistogramSender.SendDistribution"/>
-        public override void SendDistribution(string name, IList<KeyValuePair<double, int>> centroids,
+        public void SendDistribution(string name, IList<KeyValuePair<double, int>> centroids,
                                      ISet<HistogramGranularity> histogramGranularities,
                                      long? timestamp, string source,
                                      IDictionary<string, string> tags)
@@ -224,7 +227,7 @@ namespace Wavefront.CSharp.SDK.Integrations
         }
 
         /// <see cref="IWavefrontTracingSpanSender.SendSpan"/>
-        public override void SendSpan(string name, long startMillis, long durationMillis, string source,
+        public void SendSpan(string name, long startMillis, long durationMillis, string source,
                              Guid traceId, Guid spanId, IList<Guid> parents,
                              IList<Guid> followsFrom, IList<KeyValuePair<string, string>> tags,
                              IList<SpanLog> spanLogs)
@@ -267,7 +270,7 @@ namespace Wavefront.CSharp.SDK.Integrations
             }
         }
 
-        private void Run(object state)
+        private void Run(object source, ElapsedEventArgs args)
         {
             try
             {
@@ -280,7 +283,7 @@ namespace Wavefront.CSharp.SDK.Integrations
         }
 
         /// <see cref="IBufferFlusher.Flush" />
-        public override void Flush()
+        public void Flush()
         {
             if (metricsProxyConnectionHandler != null)
             {
@@ -299,7 +302,7 @@ namespace Wavefront.CSharp.SDK.Integrations
         }
 
         /// <see cref="IBufferFlusher.GetFailureCount" />
-        public override int GetFailureCount()
+        public int GetFailureCount()
         {
             int failureCount = 0;
             if (metricsProxyConnectionHandler != null)
@@ -319,11 +322,17 @@ namespace Wavefront.CSharp.SDK.Integrations
             return failureCount;
         }
 
+        /// <see cref="IWavefrontSender.DisableFlushingOnInterval" />
+        public void DisableFlushingOnInterval()
+        {
+            timer.Enabled = false;
+        }
+
         /// <summary>
         /// Flushes one last time before stopping the flushing of points on a regular interval. Closes the
         /// connection to the Wavefront proxy.
         /// </summary>
-        public override void Close()
+        public void Close()
         {
             try
             {

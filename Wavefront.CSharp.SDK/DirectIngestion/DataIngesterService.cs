@@ -28,7 +28,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
             uri = new Uri(server);
         }
 
-        /// <see cref="Wavefront.CSharp.SDK.DirectIngestion.IDataIngesterAPI.Report(string, Stream)"/>
+        /// <see cref="IDataIngesterAPI.Report(string, Stream)"/>
         public int Report(string format, Stream inputStream)
         {
             HttpWebResponse response = null;

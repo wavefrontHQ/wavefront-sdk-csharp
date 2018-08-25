@@ -1,7 +1,4 @@
 ﻿using System.IO;
-using System.Net;
-using System.Net.Http;
-using System.Threading.Tasks;
 
 namespace Wavefront.CSharp.SDK.DirectIngestion
 {
@@ -15,7 +12,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         /// </summary>
         /// <returns>The status code of the response from the Wavefront server.</returns>
         /// <param name="format">
-        /// The format of the data. Valid formats are defined in <see cref="Wavefront.CSharp.SDK.Common.Constants"/>.
+        /// The format of the data. Valid formats are defined in <see cref="Common.Constants"/>.
         /// </param>
         /// <param name="stream">The stream of data to be reported.</param>
         int Report(string format, Stream stream);
