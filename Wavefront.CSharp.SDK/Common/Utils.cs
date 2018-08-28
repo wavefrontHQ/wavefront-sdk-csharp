@@ -24,7 +24,8 @@ namespace Wavefront.CSharp.SDK.Common
             var whitespaceSanitized = WhitespaceRegex.Replace(s, "-");
             if (s.Contains("\"") || s.Contains("'"))
             {
-                // for single quotes, once we are double-quoted, single quotes can exist happily inside it.
+                // for single quotes, once we are double-quoted, single quotes can exist happily
+                // inside it.
                 return "\"" + whitespaceSanitized.Replace("\"", "\\\"") + "\"";
             }
             else
@@ -39,10 +40,14 @@ namespace Wavefront.CSharp.SDK.Common
         /// <returns>The point in Wavefront data format.</returns>
         /// <param name="name">The name of the metric.</param>
         /// <param name="value">The value of the metric point.</param>
-        /// <param name="timestamp">The timestamp in milliseconds since the epoch. Nullable.</param>
+        /// <param name="timestamp">
+        /// The timestamp in milliseconds since the epoch. Nullable.
+        /// </param>
         /// <param name="source">The source (or host) that is sending the metric.</param>
         /// <param name="tags">The tags associated with the metric.</param>
-        /// <param name="defaultSource">The source to default to if the source parameter is null.</param>
+        /// <param name="defaultSource">
+        /// The source to default to if the source parameter is null.
+        /// </param>
         public static string MetricToLineData(string name, double value, long? timestamp,
                                               string source, IDictionary<string, string> tags,
                                               string defaultSource)
@@ -103,29 +108,35 @@ namespace Wavefront.CSharp.SDK.Common
         /// <returns>The histogram distribution in Wavefront data format.</returns>
         /// <param name="name">The name of the histogram distribution.</param>
         /// <param name="centroids">
-        /// The distribution of histogram points. Each centroid is a <see cref="KeyValuePair{double, int}"/> where
-        /// the first dimension is the count of points in the centroid and second dimension is the count of points
-        /// in that centroid.
+        /// The distribution of histogram points. Each centroid is a
+        /// <see cref="KeyValuePair{double, int}"/> where the first dimension is the count of
+        /// points in the centroid and second dimension is the count of points in that centroid.
         /// </param>
         /// <param name="histogramGranularities">
-        /// The set of intervals (minute, hour, and/or day) by which histogram data should be aggregated.
+        /// The set of intervals (minute, hour, and/or day) by which histogram data should be
+        /// aggregated.
         /// </param>
         /// <param name="timestamp">The timestamp in millseconds since the epoch. Nullable.</param>
         /// <param name="source">The source (or host) that is sending the metric.</param>
         /// <param name="tags">The tags associated with the histogram.</param>
-        /// <param name="defaultSource">The source to default to if the source parameter is null.</param>
-        public static string HistogramToLineData(string name, IList<KeyValuePair<double, int>> centroids,
+        /// <param name="defaultSource">
+        /// The source to default to if the source parameter is null.
+        /// </param>
+        public static string HistogramToLineData(string name,
+                                                 IList<KeyValuePair<double, int>> centroids,
                                                  ISet<HistogramGranularity> histogramGranularities,
-                                                 long? timestamp, string source,
+                                                 long? timestamp,
+                                                 string source,
                                                  IDictionary<string, string> tags,
                                                  string defaultSource)
         {
             /*
              * Wavefront Histogram Data format
-             * {!M | !H | !D} [<timestamp>] #<count> <mean> [centroids] <histogramName> source=<source>
-             *   [pointTags]
+             * {!M | !H | !D} [<timestamp>] #<count> <mean> [centroids] <histogramName>
+             *   source=<source> [pointTags]
              *
-             * Example: "!M 1533531013 #20 30 #10 5.1 request.latency source=appServer1 region=us-west"
+             * Example: "!M 1533531013 #20 30 #10 5.1 request.latency source=appServer1
+             *   region=us-west"
              */
 
             if (String.IsNullOrWhiteSpace(name))
@@ -138,7 +149,9 @@ namespace Wavefront.CSharp.SDK.Common
             }
             if (centroids == null || centroids.Count == 0)
             {
-                throw new ArgumentException("histogram distribution should have at least one centroid");
+                throw new ArgumentException(
+                    "histogram distribution should have at least one centroid"
+                );
             }
 
             if (String.IsNullOrWhiteSpace(source))
@@ -207,13 +220,25 @@ namespace Wavefront.CSharp.SDK.Common
         /// <param name="source">The source (or host) that's sending the span.</param>
         /// <param name="traceId">The unique trace ID for the span.</param>
         /// <param name="spanId">The unique span ID for the span.</param>
-        /// <param name="parents">The list of parent span IDs, can be null if this is a root span.</param>
-        /// <param name="followsFrom">The list of preceding span IDs, can be null if this is a root span.</param>
-        /// <param name="tags">The span tags associated with this span. Supports repeated tags.</param>
+        /// <param name="parents">
+        /// The list of parent span IDs, can be null if this is a root span.
+        /// </param>
+        /// <param name="followsFrom">
+        /// The list of preceding span IDs, can be null if this is a root span.
+        /// </param>
+        /// <param name="tags">
+        /// The span tags associated with this span. Supports repeated tags.
+        /// </param>
         /// <param name="spanLogs">The span logs associated with this span.</param>
-        /// <param name="defaultSource">The source to default to if the source parameter is null.</param>
-        public static String TracingSpanToLineData(string name, long startMillis, long durationMillis,
-                                                   string source, Guid traceId, Guid spanId,
+        /// <param name="defaultSource">
+        /// The source to default to if the source parameter is null.
+        /// </param>
+        public static String TracingSpanToLineData(string name,
+                                                   long startMillis,
+                                                   long durationMillis,
+                                                   string source,
+                                                   Guid traceId,
+                                                   Guid spanId,
                                                    IList<Guid> parents,
                                                    IList<Guid> followsFrom,
                                                    IList<KeyValuePair<string, string>> tags,

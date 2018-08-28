@@ -14,7 +14,8 @@ using Wavefront.CSharp.SDK.Entities.Tracing;
 namespace Wavefront.CSharp.SDK.DirectIngestion
 {
     /// <summary>
-    /// Wavefront direct ingestion client that sends data directly to Wavefront cluster via the direct ingestion API.
+    /// Wavefront direct ingestion client that sends data directly to Wavefront cluster via the
+    /// direct ingestion API.
     /// </summary>
     public class WavefrontDirectIngestionClient : IWavefrontSender
     {
@@ -45,8 +46,12 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
             /// Creates a new
             /// <see cref="T:Wavefront.CSharp.SDK.DirectIngestion.WavefrontDirectIngestionClient.Builder"/>.
             /// </summary>
-            /// <param name="server">A Wavefront server URL of the form "https://clusterName.wavefront.com".</param>
-            /// <param name="token">A valid API token with direct ingestion permissions.</param>
+            /// <param name="server">
+            /// A Wavefront server URL of the form "https://clusterName.wavefront.com".
+            /// </param>
+            /// <param name="token">
+            /// A valid API token with direct ingestion permissions.
+            /// </param>
             public Builder(string server, string token)
             {
                 this.server = server;
@@ -119,7 +124,8 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         public void SendMetric(string name, double value, long? timestamp, string source,
                                IDictionary<string, string> tags)
         {
-            var lineData = Utils.MetricToLineData(name, value, timestamp, source, tags, DefaultSource);
+            var lineData =
+                Utils.MetricToLineData(name, value, timestamp, source, tags, DefaultSource);
 
             if (!metricsBuffer.TryAdd(lineData))
             {
@@ -128,9 +134,12 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         }
 
         /// <see cref="IWavefrontHistogramSender.SendDistribution"/>
-        public void SendDistribution(string name, IList<KeyValuePair<double, int>> centroids,
-                                     ISet<HistogramGranularity> histogramGranularities, long? timestamp,
-                                     string source, IDictionary<string, string> tags)
+        public void SendDistribution(string name,
+                                     IList<KeyValuePair<double, int>> centroids,
+                                     ISet<HistogramGranularity> histogramGranularities,
+                                     long? timestamp,
+                                     string source,
+                                     IDictionary<string, string> tags)
         {
             var lineData = Utils.HistogramToLineData(name, centroids, histogramGranularities,
                                                         timestamp, source, tags, DefaultSource);
@@ -190,12 +199,14 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
                     var statusCode = directService.Report(format, stream);
                     if (statusCode >= 400 && statusCode < 600)
                     {
-                        Logger.Log(LogLevel.Trace, "Error reporting points, respStatus=" + statusCode);
+                        Logger.Log(LogLevel.Trace,
+                                   "Error reporting points, respStatus=" + statusCode);
                         foreach (var item in batch)
                         {
                             if (!buffer.TryAdd(item))
                             {
-                                Logger.Log(LogLevel.Trace, "Buffer full, dropping attempted points");
+                                Logger.Log(LogLevel.Trace,
+                                           "Buffer full, dropping attempted points");
                             }
                         }
                     }
@@ -232,12 +243,6 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         public int GetFailureCount()
         {
             return failures;
-        }
-
-        /// <see cref="IWavefrontSender.DisableFlushingOnInterval" />
-        public void DisableFlushingOnInterval()
-        {
-            timer.Enabled = false;
         }
 
         /// <summary>

@@ -11,12 +11,13 @@ using Wavefront.CSharp.SDK.Entities.Tracing;
 namespace Wavefront.CSharp.SDK.Integrations
 {
     /// <summary>
-    /// Client that sends data directly via TCP to the Wavefront Proxy Agent. User should probably attempt to
-    /// reconnect when exceptions are thrown from any methods.
+    /// Client that sends data directly via TCP to the Wavefront Proxy Agent. User should probably
+    /// attempt to reconnect when exceptions are thrown from any methods.
     /// </summary>
     public class WavefrontProxyClient : IWavefrontSender
     {
-        private static readonly ILogger Logger = Logging.LoggerFactory.CreateLogger<WavefrontProxyClient>();
+        private static readonly ILogger Logger =
+            Logging.LoggerFactory.CreateLogger<WavefrontProxyClient>();
 
         private ProxyConnectionHandler metricsProxyConnectionHandler;
         private ProxyConnectionHandler histogramProxyConnectionHandler;
@@ -49,7 +50,9 @@ namespace Wavefront.CSharp.SDK.Integrations
             /// Enables sending of metrics to Wavefront cluster via proxy.
             /// </summary>
             /// <returns><see cref="this"/></returns>
-            /// <param name="metricsPort">The metrics port on which the Wavefront proxy is listening.</param>
+            /// <param name="metricsPort">
+            /// The metrics port on which the Wavefront proxy is listening.
+            /// </param>
             public Builder MetricsPort(int metricsPort)
             {
                 this.metricsPort = metricsPort;
@@ -73,7 +76,9 @@ namespace Wavefront.CSharp.SDK.Integrations
             /// Enables sending of tracing spans to Wavefront cluster via proxy.
             /// </summary>
             /// <returns><see cref="this"/></returns>
-            /// <param name="tracingPort">The tracing port on which the Wavefront proxy is listening.</param>
+            /// <param name="tracingPort">
+            /// The tracing port on which the Wavefront proxy is listening.
+            /// </param>
             public Builder TracingPort(int tracingPort)
             {
                 this.tracingPort = tracingPort;
@@ -168,7 +173,8 @@ namespace Wavefront.CSharp.SDK.Integrations
             {
                 try
                 {
-                    String lineData = Utils.MetricToLineData(name, value, timestamp, source, tags, defaultSource);
+                    String lineData =
+                        Utils.MetricToLineData(name, value, timestamp, source, tags, defaultSource);
                     metricsProxyConnectionHandler.SendData(lineData);
                 }
                 catch (Exception e)
@@ -210,8 +216,10 @@ namespace Wavefront.CSharp.SDK.Integrations
             {
                 try
                 {
-                    String lineData = Utils.HistogramToLineData(name, centroids, histogramGranularities,
-                                                                timestamp, source, tags, defaultSource);
+                    String lineData = Utils.HistogramToLineData(name, centroids,
+                                                                histogramGranularities,
+                                                                timestamp, source, tags,
+                                                                defaultSource);
                     histogramProxyConnectionHandler.SendData(lineData);
                 }
                 catch (Exception e)
@@ -255,7 +263,8 @@ namespace Wavefront.CSharp.SDK.Integrations
                 {
                     String lineData = Utils.TracingSpanToLineData(name, startMillis, durationMillis,
                                                                   source, traceId, spanId, parents,
-                                                                  followsFrom, tags, spanLogs, defaultSource);
+                                                                  followsFrom, tags, spanLogs,
+                                                                  defaultSource);
                     tracingProxyConnectionHandler.SendData(lineData);
                 }
                 catch (Exception e)
@@ -322,15 +331,9 @@ namespace Wavefront.CSharp.SDK.Integrations
             return failureCount;
         }
 
-        /// <see cref="IWavefrontSender.DisableFlushingOnInterval" />
-        public void DisableFlushingOnInterval()
-        {
-            timer.Enabled = false;
-        }
-
         /// <summary>
-        /// Flushes one last time before stopping the flushing of points on a regular interval. Closes the
-        /// connection to the Wavefront proxy.
+        /// Flushes one last time before stopping the flushing of points on a regular interval.
+        /// Closes the connection to the Wavefront proxy.
         /// </summary>
         public void Close()
         {
@@ -365,7 +368,8 @@ namespace Wavefront.CSharp.SDK.Integrations
                 }
                 catch (IOException e)
                 {
-                    Logger.Log(LogLevel.Warning, "error closing histogramProxyConnectionHandler", e);
+                    Logger.Log(LogLevel.Warning,
+                               "error closing histogramProxyConnectionHandler", e);
                 }
             }
 

@@ -20,7 +20,9 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         /// Initializes a new instance of the
         /// <see cref="T:Wavefront.CSharp.SDK.DirectIngestion.DataIngesterService"/> class.
         /// </summary>
-        /// <param name="server">A Wavefront server URL of the form "https://clusterName.wavefront.com".</param>
+        /// <param name="server">
+        /// A Wavefront server URL of the form "https://clusterName.wavefront.com".
+        /// </param>
         /// <param name="token">A valid API token with direct ingestion permissions.</param>
         public DataIngesterService(string server, string token)
         {
@@ -34,7 +36,8 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
             HttpWebResponse response = null;
             try
             {
-                var uriBuilder = new UriBuilder(uri.Scheme, uri.Host, uri.Port, "report", "?f=" + format);
+                var uriBuilder =
+                    new UriBuilder(uri.Scheme, uri.Host, uri.Port, "report", "?f=" + format);
                 var requestUri = uriBuilder.Uri;
 
                 var request = WebRequest.CreateHttp(requestUri);
@@ -47,7 +50,8 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
 
                 using (var outputStream = request.GetRequestStream())
                 {
-                    using (var gZipStream = new GZipStream(outputStream, CompressionMode.Compress, true))
+                    using (var gZipStream =
+                           new GZipStream(outputStream, CompressionMode.Compress, true))
                     {
                         byte[] buffer = new byte[4096];
                         while (inputStream.Read(buffer, 0, buffer.Length) > 0)
