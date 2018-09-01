@@ -229,7 +229,8 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
             return batch;
         }
 
-        private Stream BatchToStream(IList<string> batch) {
+        private Stream BatchToStream(IList<string> batch)
+        {
             var sb = new StringBuilder();
             foreach (var item in batch)
             {
