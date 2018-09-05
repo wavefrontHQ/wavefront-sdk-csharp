@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
+using System.Timers;
 using Microsoft.Extensions.Logging;
 using Wavefront.CSharp.SDK.Common;
 using Wavefront.CSharp.SDK.Entities.Histograms;
@@ -13,9 +14,10 @@ using Wavefront.CSharp.SDK.Entities.Tracing;
 namespace Wavefront.CSharp.SDK.DirectIngestion
 {
     /// <summary>
-    /// Wavefront direct ingestion client that sends data directly to Wavefront cluster via the direct ingestion API.
+    /// Wavefront direct ingestion client that sends data directly to Wavefront cluster via the
+    /// direct ingestion API.
     /// </summary>
-    public class WavefrontDirectIngestionClient : WavefrontClient
+    public class WavefrontDirectIngestionClient : IWavefrontSender
     {
         private static readonly string DefaultSource = "wavefrontDirectSender";
         private static readonly ILogger Logger =
@@ -27,7 +29,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         private BlockingCollection<string> histogramsBuffer;
         private BlockingCollection<string> tracingSpansBuffer;
         private IDataIngesterAPI directService;
-        private Timer timer;
+        private System.Timers.Timer timer;
 
         public class Builder
         {
@@ -44,8 +46,12 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
             /// Creates a new
             /// <see cref="T:Wavefront.CSharp.SDK.DirectIngestion.WavefrontDirectIngestionClient.Builder"/>.
             /// </summary>
-            /// <param name="server">A Wavefront server URL of the form "https://clusterName.wavefront.com".</param>
-            /// <param name="token">A valid API token with direct ingestion permissions.</param>
+            /// <param name="server">
+            /// A Wavefront server URL of the form "https://clusterName.wavefront.com".
+            /// </param>
+            /// <param name="token">
+            /// A valid API token with direct ingestion permissions.
+            /// </param>
             public Builder(string server, string token)
             {
                 this.server = server;
@@ -102,7 +108,10 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
                     directService = new DataIngesterService(server, token)
                 };
 
-                client.timer = new Timer(client.Run, null, 1000, flushIntervalSeconds * 1000);
+                client.timer = new System.Timers.Timer(flushIntervalSeconds * 1000);
+                client.timer.Elapsed += client.Run;
+                client.timer.Enabled = true;
+
                 return client;
             }
         }
@@ -111,11 +120,12 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         {
         }
 
-        /// <see cref="IWavefrontMetricSender.SendMetric"/>
-        public override void SendMetric(string name, double value, long? timestamp, string source,
+        /// <see cref="Entities.Metrics.IWavefrontMetricSender.SendMetric"/>
+        public void SendMetric(string name, double value, long? timestamp, string source,
                                IDictionary<string, string> tags)
         {
-            var lineData = Utils.MetricToLineData(name, value, timestamp, source, tags, DefaultSource);
+            var lineData =
+                Utils.MetricToLineData(name, value, timestamp, source, tags, DefaultSource);
 
             if (!metricsBuffer.TryAdd(lineData))
             {
@@ -124,9 +134,12 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         }
 
         /// <see cref="IWavefrontHistogramSender.SendDistribution"/>
-        public override void SendDistribution(string name, IList<KeyValuePair<double, int>> centroids,
-                                     ISet<HistogramGranularity> histogramGranularities, long? timestamp,
-                                     string source, IDictionary<string, string> tags)
+        public void SendDistribution(string name,
+                                     IList<KeyValuePair<double, int>> centroids,
+                                     ISet<HistogramGranularity> histogramGranularities,
+                                     long? timestamp,
+                                     string source,
+                                     IDictionary<string, string> tags)
         {
             var lineData = Utils.HistogramToLineData(name, centroids, histogramGranularities,
                                                         timestamp, source, tags, DefaultSource);
@@ -137,7 +150,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         }
 
         /// <see cref="IWavefrontTracingSpanSender.SendSpan"/>
-        public override void SendSpan(string name, long startMillis, long durationMillis, string source,
+        public void SendSpan(string name, long startMillis, long durationMillis, string source,
                              Guid traceId, Guid spanId, IList<Guid> parents,
                              IList<Guid> followsFrom, IList<KeyValuePair<string, string>> tags,
                              IList<SpanLog> spanLogs)
@@ -151,7 +164,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
             }
         }
 
-        private void Run(object state)
+        private void Run(object source, ElapsedEventArgs args)
         {
             try
             {
@@ -164,7 +177,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         }
 
         /// <see cref="IBufferFlusher.Flush" />
-        public override void Flush()
+        public void Flush()
         {
             InternalFlush(metricsBuffer, Constants.WavefrontMetricFormat);
             InternalFlush(histogramsBuffer, Constants.WavefrontHistogramFormat);
@@ -186,12 +199,14 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
                     var statusCode = directService.Report(format, stream);
                     if (statusCode >= 400 && statusCode < 600)
                     {
-                        Logger.Log(LogLevel.Trace, "Error reporting points, respStatus=" + statusCode);
+                        Logger.Log(LogLevel.Trace,
+                                   "Error reporting points, respStatus=" + statusCode);
                         foreach (var item in batch)
                         {
                             if (!buffer.TryAdd(item))
                             {
-                                Logger.Log(LogLevel.Trace, "Buffer full, dropping attempted points");
+                                Logger.Log(LogLevel.Trace,
+                                           "Buffer full, dropping attempted points");
                             }
                         }
                     }
@@ -225,7 +240,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         }
 
         /// <see cref="IBufferFlusher.GetFailureCount" />
-        public override int GetFailureCount()
+        public int GetFailureCount()
         {
             return failures;
         }
@@ -234,7 +249,7 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
         /// Flushes one last time before stopping the flushing of points on a regular interval.
         /// </summary>
         [MethodImpl(MethodImplOptions.Synchronized)]
-        public override void Close()
+        public void Close()
         {
             try
             {

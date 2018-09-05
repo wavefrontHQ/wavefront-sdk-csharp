@@ -11,9 +11,12 @@ namespace Wavefront.CSharp.SDK.Entities.Events
         /// Send an event to Wavefront.
         /// </summary>
         /// <param name="name">
-        /// The name of the event. Spaces are replaced with '-' (dashes) and quotes will be automatically escaped.
+        /// The name of the event. Spaces are replaced with '-' (dashes) and quotes will be
+        /// automatically escaped.
         /// </param>
-        /// <param name="startMillis">The timestamp in milliseconds when the event was started.</param>
+        /// <param name="startMillis">
+        /// The timestamp in milliseconds when the event was started.
+        /// </param>
         /// <param name="endMillis">The timestamp in milliseconds when the event was ended.</param>
         /// <param name="source">
         /// The source (or host) that's sending the event. If null, then assigned by Wavefront.

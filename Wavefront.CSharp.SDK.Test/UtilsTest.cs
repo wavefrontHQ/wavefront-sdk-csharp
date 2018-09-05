@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
 using Wavefront.CSharp.SDK.Common;
 using Wavefront.CSharp.SDK.Entities.Histograms;
 using Xunit;
@@ -26,63 +25,73 @@ namespace Wavefront.CSharp.SDK.Test
         [Fact]
         public void TestMetricToLineData()
         {
-            Assert.Equal("\"new-york.power.usage\" 42422 1493773500 source=\"localhost\" " +
-                "\"datacenter\"=\"dc1\"\n", Utils.MetricToLineData("new-york.power.usage", 42422, 1493773500L,
-                "localhost", new Dictionary<string, string>{ { "datacenter", "dc1"} }.ToImmutableDictionary(),
-                "defaultSource"));
+            Assert.Equal(
+                "\"new-york.power.usage\" 42422 1493773500 source=\"localhost\" " +
+                "\"datacenter\"=\"dc1\"\n",
+                Utils.MetricToLineData(
+                    "new-york.power.usage", 42422, 1493773500L, "localhost",
+                    new Dictionary<string, string>{ { "datacenter", "dc1"} }.ToImmutableDictionary(),
+                    "defaultSource"));
             // null timestamp
-            Assert.Equal("\"new-york.power.usage\" 42422 source=\"localhost\" " +
-                "\"datacenter\"=\"dc1\"\n", Utils.MetricToLineData("new-york.power.usage", 42422, null,
-                "localhost", new Dictionary<string, string>{ { "datacenter", "dc1"} }.ToImmutableDictionary(),
-                "defaultSource"));
+            Assert.Equal(
+                "\"new-york.power.usage\" 42422 source=\"localhost\" \"datacenter\"=\"dc1\"\n",
+                Utils.MetricToLineData(
+                    "new-york.power.usage", 42422, null, "localhost",
+                    new Dictionary<string, string>{ { "datacenter", "dc1"} }.ToImmutableDictionary(),
+                    "defaultSource"));
             // null tags
-            Assert.Equal("\"new-york.power.usage\" 42422 1493773500 source=\"localhost\"\n",
-                Utils.MetricToLineData("new-york.power.usage", 42422, 1493773500L,
-                "localhost", null, "defaultSource"));
+            Assert.Equal(
+                "\"new-york.power.usage\" 42422 1493773500 source=\"localhost\"\n",
+                Utils.MetricToLineData("new-york.power.usage", 42422, 1493773500L, "localhost",
+                                       null, "defaultSource"));
             // null tags and null timestamp
-            Assert.Equal("\"new-york.power.usage\" 42422 source=\"localhost\"\n",
+            Assert.Equal(
+                "\"new-york.power.usage\" 42422 source=\"localhost\"\n",
                 Utils.MetricToLineData("new-york.power.usage", 42422, null, "localhost", null,
-                "defaultSource"));
+                                       "defaultSource"));
         }
 
         [Fact]
         public void TestHistogramToLineData()
         {
-            Assert.Equal("!M 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" " +
-                    "\"region\"=\"us-west\"\n", Utils.HistogramToLineData(
-                             "request.latency",
-                             ImmutableList.Create(
-                                 new KeyValuePair<double, int>(30.0, 20),
-                                 new KeyValuePair<double, int>(5.1, 10)
-                             ),
-                             ImmutableHashSet.Create(HistogramGranularity.Minute),
-                             1493773500L, "appServer1",
-                             new Dictionary<string, string>{ { "region", "us-west"} }.ToImmutableDictionary(),
-                             "defaultSource"));
+            Assert.Equal(
+                "!M 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" " +
+                "\"region\"=\"us-west\"\n",
+                Utils.HistogramToLineData(
+                    "request.latency",
+                    ImmutableList.Create(
+                        new KeyValuePair<double, int>(30.0, 20),
+                        new KeyValuePair<double, int>(5.1, 10)
+                    ),
+                    ImmutableHashSet.Create(HistogramGranularity.Minute), 1493773500L, "appServer1",
+                    new Dictionary<string, string>{ { "region", "us-west"} }.ToImmutableDictionary(),
+                    "defaultSource"));
 
             // null timestamp
-            Assert.Equal("!M #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" " +
-                    "\"region\"=\"us-west\"\n", Utils.HistogramToLineData(
-                             "request.latency",
-                             ImmutableList.Create(
-                                 new KeyValuePair<double, int>(30.0, 20),
-                                 new KeyValuePair<double, int>(5.1, 10)
-                             ),
-                             ImmutableHashSet.Create(HistogramGranularity.Minute),
-                             null, "appServer1",
-                             new Dictionary<string, string> { { "region", "us-west" } }.ToImmutableDictionary(),
-                             "defaultSource"));
+            Assert.Equal(
+                "!M #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" " +
+                "\"region\"=\"us-west\"\n",
+                Utils.HistogramToLineData(
+                    "request.latency",
+                    ImmutableList.Create(
+                        new KeyValuePair<double, int>(30.0, 20),
+                        new KeyValuePair<double, int>(5.1, 10)
+                    ),
+                    ImmutableHashSet.Create(HistogramGranularity.Minute), null, "appServer1",
+                    new Dictionary<string, string> { { "region", "us-west" } }.ToImmutableDictionary(),
+                    "defaultSource"));
 
             // null tags
-            Assert.Equal("!M 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\"\n",
+            Assert.Equal(
+                "!M 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\"\n",
                 Utils.HistogramToLineData(
-                             "request.latency",
-                             ImmutableList.Create(
-                                 new KeyValuePair<double, int>(30.0, 20),
-                                 new KeyValuePair<double, int>(5.1, 10)
-                             ),
-                             ImmutableHashSet.Create(HistogramGranularity.Minute),
-                             1493773500L, "appServer1", null, "defaultSource"));
+                    "request.latency",
+                    ImmutableList.Create(
+                        new KeyValuePair<double, int>(30.0, 20),
+                        new KeyValuePair<double, int>(5.1, 10)
+                    ),
+                    ImmutableHashSet.Create(HistogramGranularity.Minute),
+                    1493773500L, "appServer1", null, "defaultSource"));
 
             // empty centroids
             Assert.Throws<ArgumentException>(() => Utils.HistogramToLineData(

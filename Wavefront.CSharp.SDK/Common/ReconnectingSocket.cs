@@ -15,7 +15,8 @@ namespace Wavefront.CSharp.SDK.Common
     /// </summary>
     public class ReconnectingSocket
     {
-        private static readonly ILogger Logger = Logging.LoggerFactory.CreateLogger<ReconnectingSocket>();
+        private static readonly ILogger Logger =
+            Logging.LoggerFactory.CreateLogger<ReconnectingSocket>();
 
         private readonly int serverReadTimeoutMillis = 2000;
         private readonly int bufferSize = 8192;
@@ -26,7 +27,8 @@ namespace Wavefront.CSharp.SDK.Common
         private volatile Stream socketOutputStream;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="T:Wavefront.CSharp.SDK.Common.ReconnectingSocket"/> class.
+        /// Initializes a new instance of the
+        /// <see cref="T:Wavefront.CSharp.SDK.Common.ReconnectingSocket"/> class.
         /// </summary>
         /// <param name="host">The hostname of the Wavefront proxy.</param>
         /// <param name="port">The port number of the Wavefront proxy to connect to.</param>
