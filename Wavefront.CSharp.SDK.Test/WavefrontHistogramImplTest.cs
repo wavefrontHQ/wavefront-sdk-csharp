@@ -168,8 +168,7 @@ namespace Wavefront.CSharp.SDK.Test
             Assert.Equal(1, rangeSnapshot.Min);
             Assert.Equal(1000, rangeSnapshot.Size);
             Assert.Equal(500500, rangeSnapshot.Sum);
-            Assert.Equal(
-                Enumerable.Range(1, 1000).Select(i => (double)i).ToList(), rangeSnapshot.Values);
+            Assert.Equal(Enumerable.Range(1, 1000).Select(i => (double)i), rangeSnapshot.Values);
             Assert.Equal(500.5, rangeSnapshot.GetValue(0.5d));
             Assert.Equal(750.5, rangeSnapshot.GetValue(0.75d));
             Assert.Equal(950.5, rangeSnapshot.GetValue(0.95d));
