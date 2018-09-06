@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading.Tasks;
 using Wavefront.CSharp.SDK.Entities.Histograms;
 using Xunit;
 
@@ -41,6 +42,16 @@ namespace Wavefront.CSharp.SDK.Test
             {
                 wavefrontHistogram.Update(i);
             }
+
+            return wavefrontHistogram;
+        }
+
+        private static WavefrontHistogramImpl CreateMultiThreadedHistogram(Func<long> clockMillis)
+        {
+            var wavefrontHistogram = new WavefrontHistogramImpl(clockMillis);
+
+            // Update the histogram in parallel
+            Parallel.For(1, 101, wavefrontHistogram.Update);
 
             return wavefrontHistogram;
         }
@@ -132,6 +143,7 @@ namespace Wavefront.CSharp.SDK.Test
 
             var powSnapshot = CreatePowHistogram(clockMillis).GetSnapshot();
             var rangeSnapshot = CreateRangeHistogram(clockMillis).GetSnapshot();
+            var multiThreadedSnapshot = CreateMultiThreadedHistogram(clockMillis).GetSnapshot();
 
             // Test snapshot for the pow histogram
 
@@ -156,13 +168,20 @@ namespace Wavefront.CSharp.SDK.Test
             Assert.Equal(1, rangeSnapshot.Min);
             Assert.Equal(1000, rangeSnapshot.Size);
             Assert.Equal(500500, rangeSnapshot.Sum);
-            Assert.Equal(Enumerable.Range(1, 1000).Select(i => (double)i), rangeSnapshot.Values);
+            Assert.Equal(
+                Enumerable.Range(1, 1000).Select(i => (double)i).ToList(), rangeSnapshot.Values);
             Assert.Equal(500.5, rangeSnapshot.GetValue(0.5d));
             Assert.Equal(750.5, rangeSnapshot.GetValue(0.75d));
             Assert.Equal(950.5, rangeSnapshot.GetValue(0.95d));
             Assert.Equal(980.5, rangeSnapshot.GetValue(0.98d));
             Assert.Equal(990.5, rangeSnapshot.GetValue(0.99d));
             Assert.Equal(999.5, rangeSnapshot.GetValue(0.999d));
+
+            // Test snapshot for multi-threaded histogram
+
+            Assert.Equal(100, multiThreadedSnapshot.Count);
+            Assert.Equal(5050, multiThreadedSnapshot.Sum);
+            Assert.Equal(99.5, multiThreadedSnapshot.GetValue(0.999d), 0);
         }
     }
 }

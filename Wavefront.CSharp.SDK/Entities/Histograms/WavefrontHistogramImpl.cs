@@ -17,6 +17,12 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
          */
         private static readonly int MaxBins = 10;
 
+        // The accuracy of the TDigest distribution.
+        private readonly double Accuracy = 1.0 / 100;
+
+        // The compression constant of the TDigest distribution.
+        private readonly double Compression = 20;
+
         private readonly Func<long> clockMillis;
 
         // Global list of thread local histogramBinsList wrapped in WeakReference
@@ -227,7 +233,7 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
         /// <returns>The snapshot.</returns>
         public Snapshot GetSnapshot()
         {
-            var snapshot = new TDigest();
+            var snapshot = new TDigest(Accuracy, Compression);
 
             lock(globalHistogramBinsList)
             {
@@ -287,7 +293,7 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
                 int n = sharedBinsInstance.Count;
                 if (n == 0 || sharedBinsInstance[n - 1].MinuteMillis != currMinuteMillis)
                 {
-                    sharedBinsInstance.Add(new MinuteBin(currMinuteMillis));
+                    sharedBinsInstance.Add(new MinuteBin(Accuracy, Compression, currMinuteMillis));
                     if (sharedBinsInstance.Count > MaxBins)
                     {
                         sharedBinsInstance.RemoveAt(0);
@@ -425,9 +431,9 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
             /// Initializes a new instance of the <see cref="MinuteBin"/> class.
             /// </summary>
             /// <param name="minuteMillis">The start of the minute in milliseconds.</param>
-            public MinuteBin(long minuteMillis)
+            public MinuteBin(double accuracy, double compression, long minuteMillis)
             {
-                Distribution = new TDigest();
+                Distribution = new TDigest(accuracy, compression);
                 MinuteMillis = minuteMillis;
             }
         }
