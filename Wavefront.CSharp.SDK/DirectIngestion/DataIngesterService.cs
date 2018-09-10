@@ -54,9 +54,10 @@ namespace Wavefront.CSharp.SDK.DirectIngestion
                            new GZipStream(outputStream, CompressionMode.Compress, true))
                     {
                         byte[] buffer = new byte[4096];
-                        while (inputStream.Read(buffer, 0, buffer.Length) > 0)
+                        int bytesRead;
+                        while ((bytesRead = inputStream.Read(buffer, 0, buffer.Length)) > 0)
                         {
-                            gZipStream.Write(buffer, 0, buffer.Length);
+                            gZipStream.Write(buffer, 0, bytesRead);
                         }
                         gZipStream.Flush();
                     }
