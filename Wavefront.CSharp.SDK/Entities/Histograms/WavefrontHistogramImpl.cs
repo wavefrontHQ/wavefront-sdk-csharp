@@ -9,6 +9,12 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
 {
     public class WavefrontHistogramImpl
     {
+        // The accuracy of the TDigest distribution.
+        private static readonly double Accuracy = 1.0 / 100;
+
+        // The compression constant of the TDigest distribution.
+        private static readonly double Compression = 20;
+
         /*
          * If a thread's bin queue has exceeded MaxBins number of bins (e.g., the thread has data
          * that has yet to be reported for more than MaxBins number of minutes), delete the oldest
@@ -17,22 +23,27 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
          */
         private static readonly int MaxBins = 10;
 
-        // The accuracy of the TDigest distribution.
-        private readonly double Accuracy = 1.0 / 100;
-
-        // The compression constant of the TDigest distribution.
-        private readonly double Compression = 20;
-
         private readonly Func<long> clockMillis;
 
-        // Global list of thread local histogramBinsList wrapped in WeakReference
-        private readonly List<WeakReference<List<MinuteBin>>> globalHistogramBinsList;
+        /*
+         * Global concurrent list of thread local histogramBinsList wrapped in WeakReference.
+         * This list holds all the thread local List of Minute Bins.
+         * This is a ConcurrentMinuteBinList so that we can lock and modify the queue while
+         * enumerating in order to prevent InvalidOperationExceptions.
+         * The MinuteBin itself is not thread safe and can change but it is still thread safe since
+         * we don’t ever update a bin that’s old or flush a bin that’s within the current minute.
+         */
+        private readonly List<WeakReference<ConcurrentMinuteBinList>> globalHistogramBinsList =
+            new List<WeakReference<ConcurrentMinuteBinList>>();
+
+        // Protects read and write access to globalHistogramBinsList
+        private readonly ReaderWriterLockSlim globalHistogramBinsLock = new ReaderWriterLockSlim();
 
         /*
          * ThreadLocal histogramBinsList where the initial value set is also added to a
          * global list of thread local histogramBinsList wrapped in WeakReference.
          */
-        private readonly ThreadLocal<List<MinuteBin>> histogramBinsList;
+        private readonly ThreadLocal<ConcurrentMinuteBinList> histogramBinsList;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WavefrontHistogramImpl"/> class
@@ -50,12 +61,19 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
         public WavefrontHistogramImpl(Func<long> clockMillis)
         {
             this.clockMillis = clockMillis;
-            globalHistogramBinsList = new List<WeakReference<List<MinuteBin>>>();
-            histogramBinsList = new ThreadLocal<List<MinuteBin>>(() =>
+            histogramBinsList = new ThreadLocal<ConcurrentMinuteBinList>(() =>
             {
-                var sharedBinsInstance = new List<MinuteBin>();
-                globalHistogramBinsList.Add(
-                    new WeakReference<List<MinuteBin>>(sharedBinsInstance));
+                var sharedBinsInstance = new ConcurrentMinuteBinList();
+                globalHistogramBinsLock.EnterWriteLock();
+                try
+                {
+                    globalHistogramBinsList.Add(
+                        new WeakReference<ConcurrentMinuteBinList>(sharedBinsInstance));
+                }
+                finally
+                {
+                    globalHistogramBinsLock.ExitWriteLock();
+                }
                 return sharedBinsInstance;
             });
         }
@@ -119,35 +137,98 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
         /// </returns>
         public IList<Distribution> FlushDistributions()
         {
-            var cutOffMillis = CurrentMinuteMillis();
-            var minuteBins = new List<MinuteBin>();
-
-            lock(globalHistogramBinsList)
+            long cutOffMillis = CurrentMinuteMillis();
+            globalHistogramBinsLock.EnterWriteLock();
+            try
             {
-                foreach (var weakRef in globalHistogramBinsList)
+                return ProcessGlobalHistogramBinsList(cutOffMillis);
+            }
+            finally
+            {
+                globalHistogramBinsLock.ExitWriteLock();
+            }
+        }
+
+        private IList<Distribution> ProcessGlobalHistogramBinsList(long cutOffMillis)
+        {
+            var distributions = new List<Distribution>();
+
+            for (int i = globalHistogramBinsList.Count - 1; i >= 0; --i)
+            {
+                if (globalHistogramBinsList[i].TryGetTarget(out var sharedBinsInstance))
                 {
-                    if (weakRef.TryGetTarget(out var bins))
+                    sharedBinsInstance.Lock.EnterWriteLock();
+                    try
                     {
-                        minuteBins.AddRange(bins.Where(bin => bin.MinuteMillis < cutOffMillis));
+                        for (int j = sharedBinsInstance.MinuteBins.Count - 1; j >= 0; --j)
+                        {
+                            var bin = sharedBinsInstance.MinuteBins[j];
+                            if (bin.MinuteMillis < cutOffMillis)
+                            {
+                                var centroids = bin
+                                    .Distribution.GetDistribution()
+                                    .Select(centroid => new KeyValuePair<double, int>(
+                                        centroid.Value, (int)centroid.Count
+                                    ))
+                                    .ToList();
+                                distributions.Add(new Distribution(bin.MinuteMillis, centroids));
+                                sharedBinsInstance.MinuteBins.RemoveAt(j);
+                            }
+                        }
                     }
+                    finally
+                    {
+                        sharedBinsInstance.Lock.ExitWriteLock();
+                    }
+
+                }
+                else
+                {
+                    globalHistogramBinsList.RemoveAt(i);
                 }
             }
 
-            var distributions = new List<Distribution>();
-            foreach (var minuteBin in minuteBins)
+            return distributions;
+        }
+
+        /// <summary>
+        /// Gets a <see cref="Snapshot" /> of the current contents of the histogram.
+        /// </summary>
+        /// <returns>The snapshot.</returns>
+        public Snapshot GetSnapshot()
+        {
+            var snapshot = new TDigest(Accuracy, Compression);
+            globalHistogramBinsLock.EnterReadLock();
+            try
             {
-                var centroids = minuteBin
-                    .Distribution.GetDistribution()
-                    .Select(centroid => new KeyValuePair<double, int>(
-                        centroid.Value, (int)centroid.Count
-                    ))
-                    .ToList();
-                distributions.Add(new Distribution(minuteBin.MinuteMillis, centroids));
+                foreach (var weakRef in globalHistogramBinsList)
+                {
+                    if (weakRef.TryGetTarget(out var sharedBinsInstance))
+                    {
+                        sharedBinsInstance.Lock.EnterReadLock();
+                        try
+                        {
+                            foreach (var bin in sharedBinsInstance.MinuteBins)
+                            {
+                                foreach (var centroid in bin.Distribution.GetDistribution())
+                                {
+                                    snapshot.Add(centroid.Value, centroid.Count);
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            sharedBinsInstance.Lock.ExitReadLock();
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                globalHistogramBinsLock.ExitReadLock();
             }
 
-            ClearPriorCurrentMinuteBin(cutOffMillis);
-
-            return distributions;
+            return new Snapshot(snapshot);
         }
 
         /// <summary>
@@ -228,57 +309,6 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
         }
 
         /// <summary>
-        /// Gets a <see cref="Snapshot" /> of the current contents of the histogram.
-        /// </summary>
-        /// <returns>The snapshot.</returns>
-        public Snapshot GetSnapshot()
-        {
-            var snapshot = new TDigest(Accuracy, Compression);
-
-            lock(globalHistogramBinsList)
-            {
-                foreach (var weakRef in globalHistogramBinsList)
-                {
-                    if (weakRef.TryGetTarget(out var bins))
-                    {
-                        bins.ForEach(
-                            bin => bin.Distribution.GetDistribution().ToList().ForEach(
-                                centroid => snapshot.Add(centroid.Value, centroid.Count)
-                            )
-                        );
-                    }
-                }
-            }
-
-            return new Snapshot(snapshot);
-        }
-
-        private void ClearPriorCurrentMinuteBin(long cutOffMillis)
-        {
-            lock(globalHistogramBinsList)
-            {
-                for (int i = globalHistogramBinsList.Count - 1; i >= 0; i--)
-                {
-                    if (!globalHistogramBinsList[i].TryGetTarget(out var sharedBinsInstance))
-                    {
-                        globalHistogramBinsList.RemoveAt(i);
-                        continue;
-                    }
-
-                    /*
-                     * GetCurrentBin() method will add (PRODUCER) item to the sharedBinsInstance
-                     * list, so lock the access to sharedBinsInstance
-                     */
-                    lock (sharedBinsInstance)
-                    {
-                        sharedBinsInstance.RemoveAll(
-                            minuteBin => minuteBin.MinuteMillis < cutOffMillis);
-                    }
-                }
-            }
-        }
-
-        /// <summary>
         /// Helper to retrieve the current bin. Will be invoked on the thread local
         /// histogramBinsList.
         /// </summary>
@@ -286,20 +316,38 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
         private MinuteBin GetCurrentBin()
         {
             var sharedBinsInstance = histogramBinsList.Value;
-            var currMinuteMillis = CurrentMinuteMillis();
+            long currMinuteMillis = CurrentMinuteMillis();
 
-            lock(sharedBinsInstance)
+            /*
+             * We'll upgrade to a write lock only when necessary because on most occasions,
+             * the condition for updating the list of bins will not be satisfied.
+             */
+            sharedBinsInstance.Lock.EnterUpgradeableReadLock();
+            try
             {
-                int n = sharedBinsInstance.Count;
-                if (n == 0 || sharedBinsInstance[n - 1].MinuteMillis != currMinuteMillis)
+                int n = sharedBinsInstance.MinuteBins.Count;
+                if (n == 0 || sharedBinsInstance.MinuteBins[n - 1].MinuteMillis != currMinuteMillis)
                 {
-                    sharedBinsInstance.Add(new MinuteBin(Accuracy, Compression, currMinuteMillis));
-                    if (sharedBinsInstance.Count > MaxBins)
+                    sharedBinsInstance.Lock.EnterWriteLock();
+                    try
                     {
-                        sharedBinsInstance.RemoveAt(0);
+                        sharedBinsInstance.MinuteBins.Add(
+                            new MinuteBin(Accuracy, Compression, currMinuteMillis));
+                        if (sharedBinsInstance.MinuteBins.Count > MaxBins)
+                        {
+                            sharedBinsInstance.MinuteBins.RemoveAt(0);
+                        }
+                    }
+                    finally
+                    {
+                        sharedBinsInstance.Lock.ExitWriteLock();
                     }
                 }
-                return sharedBinsInstance[sharedBinsInstance.Count - 1];
+                return sharedBinsInstance.MinuteBins[sharedBinsInstance.MinuteBins.Count - 1];
+            }
+            finally
+            {
+                sharedBinsInstance.Lock.ExitUpgradeableReadLock();
             }
         }
 
@@ -436,6 +484,18 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
                 Distribution = new TDigest(accuracy, compression);
                 MinuteMillis = minuteMillis;
             }
+        }
+
+        /// <summary>
+        /// A class that holds a list of minute bins along with a lock to handle concurrent
+        /// read/write access to the list. This is a workaround to get around the fact
+        /// that C# lacks a built-in concurrent collection that is ordered, can handle lookups
+        /// at both ends, and can handle element removal while enumerating.
+        /// </summary>
+        private class ConcurrentMinuteBinList
+        {
+            public List<MinuteBin> MinuteBins { get; } = new List<MinuteBin>();
+            public ReaderWriterLockSlim Lock { get; } = new ReaderWriterLockSlim();
         }
     }
 }
