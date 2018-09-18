@@ -423,7 +423,10 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
             /// </summary>
             /// <returns>The estimated value of the quantile.</returns>
             /// <param name="quantile">The quantile.</param>
-            public double GetValue(double quantile) => distribution.Quantile(quantile);
+            public double GetValue(double quantile)
+            {
+                return Count == 0 ? Double.NaN : distribution.Quantile(quantile);
+            }
         }
 
         /// <summary>
