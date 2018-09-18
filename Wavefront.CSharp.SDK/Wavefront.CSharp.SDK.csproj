@@ -4,8 +4,8 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackOnBuild>true</PackOnBuild>
     <PackageId>Wavefront.CSharp.SDK</PackageId>
-    <PackageVersion>0.3.0-alpha</PackageVersion>
-    <Authors>Han Zhang</Authors>
+    <PackageVersion>0.3.2-alpha</PackageVersion>
+    <Authors>Wavefront</Authors>
     <Description>This package provides support for sending metrics, histograms and opentracing spans to Wavefront via proxy or direct ingestion.</Description>
   </PropertyGroup>
 
@@ -23,5 +23,6 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
     <PackageReference Include="NuGet.Build.Packaging" Version="0.2.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.1" />
+    <PackageReference Include="TDigest" Version="1.0.6" />
   </ItemGroup>
 </Project>
