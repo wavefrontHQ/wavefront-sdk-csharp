@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,25 +26,19 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
 
         private readonly Func<long> clockMillis;
 
-        /*
-         * Global concurrent list of thread local histogramBinsList wrapped in WeakReference.
-         * This list holds all the thread local List of Minute Bins.
-         * This is a ConcurrentMinuteBinList so that we can lock and modify the queue while
-         * enumerating in order to prevent InvalidOperationExceptions.
-         * The MinuteBin itself is not thread safe and can change but it is still thread safe since
-         * we don’t ever update a bin that’s old or flush a bin that’s within the current minute.
-         */
-        private readonly List<WeakReference<ConcurrentMinuteBinList>> globalHistogramBinsList =
-            new List<WeakReference<ConcurrentMinuteBinList>>();
+        // Global list of ThreadMinuteBin.
+        private readonly IList<ThreadMinuteBin> globalHistogramBinsList =
+            new List<ThreadMinuteBin>();
 
         // Protects read and write access to globalHistogramBinsList
         private readonly ReaderWriterLockSlim globalHistogramBinsLock = new ReaderWriterLockSlim();
 
         /*
-         * ThreadLocal histogramBinsList where the initial value set is also added to a
-         * global list of thread local histogramBinsList wrapped in WeakReference.
+         * Current Minute Histogram Bin.
+         * Update functions will only update data inside currentMinuteBin, which contains
+         * TimeStamp and the ConcurrentDictionary of ThreadId and TDigest distribution.
          */
-        private readonly ThreadLocal<ConcurrentMinuteBinList> histogramBinsList;
+        private ThreadMinuteBin currentMinuteBin;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WavefrontHistogramImpl"/> class
@@ -61,21 +56,7 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
         public WavefrontHistogramImpl(Func<long> clockMillis)
         {
             this.clockMillis = clockMillis;
-            histogramBinsList = new ThreadLocal<ConcurrentMinuteBinList>(() =>
-            {
-                var sharedBinsInstance = new ConcurrentMinuteBinList();
-                globalHistogramBinsLock.EnterWriteLock();
-                try
-                {
-                    globalHistogramBinsList.Add(
-                        new WeakReference<ConcurrentMinuteBinList>(sharedBinsInstance));
-                }
-                finally
-                {
-                    globalHistogramBinsLock.ExitWriteLock();
-                }
-                return sharedBinsInstance;
-            });
+            currentMinuteBin = new ThreadMinuteBin(CurrentMinuteMillis());
         }
 
         /// <summary>
@@ -102,7 +83,7 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
         /// <param name="value">The value to be added.</param>
         public void Update(double value)
         {
-            GetCurrentBin().Distribution.Add(value);
+            GetCurrentBin().UpdateByThreadId(Thread.CurrentThread.ManagedThreadId, value);
         }
 
         /// <summary>
@@ -112,15 +93,8 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
         /// <param name="counts">The centroid weights/sample counts.</param>
         public void BulkUpdate(IList<double> means, IList<int> counts)
         {
-            if (means != null && counts != null)
-            {
-                int n = Math.Min(means.Count, counts.Count);
-                var currentBin = GetCurrentBin();
-                for (int i = 0; i < n; ++i)
-                {
-                    currentBin.Distribution.Add(means[i], counts[i]);
-                }
-            }
+            GetCurrentBin().BulkUpdateByThreadId(
+                Thread.CurrentThread.ManagedThreadId, means, counts);
         }
 
         /// <summary>
@@ -137,95 +111,57 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
         /// </returns>
         public IList<Distribution> FlushDistributions()
         {
-            long cutOffMillis = CurrentMinuteMillis();
-            globalHistogramBinsLock.EnterWriteLock();
+            var distributions = new List<Distribution>();
+            globalHistogramBinsLock.EnterUpgradeableReadLock();
             try
             {
-                return ProcessGlobalHistogramBinsList(cutOffMillis);
+                var globalHistogramBinsList = GetGlobalHistogramBinsList();
+                globalHistogramBinsLock.EnterWriteLock();
+                try
+                {
+                    for (int i = globalHistogramBinsList.Count - 1; i >= 0; --i)
+                    {
+                        distributions.Add(globalHistogramBinsList[i].ToDistribution());
+                        globalHistogramBinsList.RemoveAt(i);
+                    }
+                }
+                finally
+                {
+                    globalHistogramBinsLock.ExitWriteLock();
+                }
             }
             finally
             {
-                globalHistogramBinsLock.ExitWriteLock();
+                globalHistogramBinsLock.ExitUpgradeableReadLock();
             }
-        }
-
-        private IList<Distribution> ProcessGlobalHistogramBinsList(long cutOffMillis)
-        {
-            var distributions = new List<Distribution>();
-
-            for (int i = globalHistogramBinsList.Count - 1; i >= 0; --i)
-            {
-                if (globalHistogramBinsList[i].TryGetTarget(out var sharedBinsInstance))
-                {
-                    sharedBinsInstance.Lock.EnterWriteLock();
-                    try
-                    {
-                        for (int j = sharedBinsInstance.MinuteBins.Count - 1; j >= 0; --j)
-                        {
-                            var bin = sharedBinsInstance.MinuteBins[j];
-                            if (bin.MinuteMillis < cutOffMillis)
-                            {
-                                var centroids = bin
-                                    .Distribution.GetDistribution()
-                                    .Select(centroid => new KeyValuePair<double, int>(
-                                        centroid.Value, (int)centroid.Count
-                                    ))
-                                    .ToList();
-                                distributions.Add(new Distribution(bin.MinuteMillis, centroids));
-                                sharedBinsInstance.MinuteBins.RemoveAt(j);
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        sharedBinsInstance.Lock.ExitWriteLock();
-                    }
-
-                }
-                else
-                {
-                    globalHistogramBinsList.RemoveAt(i);
-                }
-            }
-
             return distributions;
         }
 
         /// <summary>
-        /// Gets a <see cref="Snapshot" /> of the current contents of the histogram.
+        /// Gets a <see cref="Snapshot" /> of the contents of the histogram prior to the current
+        /// minute.
         /// </summary>
         /// <returns>The snapshot.</returns>
         public Snapshot GetSnapshot()
         {
             var snapshot = new TDigest(Accuracy, Compression);
-            globalHistogramBinsLock.EnterReadLock();
+            globalHistogramBinsLock.EnterUpgradeableReadLock();
             try
             {
-                foreach (var weakRef in globalHistogramBinsList)
+                foreach (var bin in GetGlobalHistogramBinsList())
                 {
-                    if (weakRef.TryGetTarget(out var sharedBinsInstance))
+                    foreach (var dist in bin.PerThreadDist.Values)
                     {
-                        sharedBinsInstance.Lock.EnterReadLock();
-                        try
+                        foreach (var centroid in dist.GetDistribution())
                         {
-                            foreach (var bin in sharedBinsInstance.MinuteBins)
-                            {
-                                foreach (var centroid in bin.Distribution.GetDistribution())
-                                {
-                                    snapshot.Add(centroid.Value, centroid.Count);
-                                }
-                            }
-                        }
-                        finally
-                        {
-                            sharedBinsInstance.Lock.ExitReadLock();
+                            snapshot.Add(centroid.Value, centroid.Count);
                         }
                     }
                 }
             }
             finally
             {
-                globalHistogramBinsLock.ExitReadLock();
+                globalHistogramBinsLock.ExitUpgradeableReadLock();
             }
 
             return new Snapshot(snapshot);
@@ -308,52 +244,55 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
             return distributions;
         }
 
-        /// <summary>
-        /// Helper to retrieve the current bin. Will be invoked on the thread local
-        /// histogramBinsList.
-        /// </summary>
-        /// <returns>The current bin.</returns>
-        private MinuteBin GetCurrentBin()
-        {
-            var sharedBinsInstance = histogramBinsList.Value;
-            long currMinuteMillis = CurrentMinuteMillis();
-
-            /*
-             * We'll upgrade to a write lock only when necessary because on most occasions,
-             * the condition for updating the list of bins will not be satisfied.
-             */
-            sharedBinsInstance.Lock.EnterUpgradeableReadLock();
-            try
-            {
-                int n = sharedBinsInstance.MinuteBins.Count;
-                if (n == 0 || sharedBinsInstance.MinuteBins[n - 1].MinuteMillis != currMinuteMillis)
-                {
-                    sharedBinsInstance.Lock.EnterWriteLock();
-                    try
-                    {
-                        sharedBinsInstance.MinuteBins.Add(
-                            new MinuteBin(Accuracy, Compression, currMinuteMillis));
-                        if (sharedBinsInstance.MinuteBins.Count > MaxBins)
-                        {
-                            sharedBinsInstance.MinuteBins.RemoveAt(0);
-                        }
-                    }
-                    finally
-                    {
-                        sharedBinsInstance.Lock.ExitWriteLock();
-                    }
-                }
-                return sharedBinsInstance.MinuteBins[sharedBinsInstance.MinuteBins.Count - 1];
-            }
-            finally
-            {
-                sharedBinsInstance.Lock.ExitUpgradeableReadLock();
-            }
-        }
-
         private long CurrentMinuteMillis()
         {
             return (clockMillis() / 60000L) * 60000L;
+        }
+
+        /// <summary>
+        /// Helper to retrieve the current bin.
+        /// Will flush currentMinuteBin into globalHistogramBinsList if it's a new minute.
+        /// </summary>
+        /// <returns>The current ThreadMinuteBin.</returns>
+        private ThreadMinuteBin GetCurrentBin()
+        {
+            return FlushCurrentBin(CurrentMinuteMillis());
+        }
+
+        private ThreadMinuteBin FlushCurrentBin(long currMinuteMillis)
+        {
+            if (currentMinuteBin.MinuteMillis == currMinuteMillis)
+            {
+                return currentMinuteBin;
+            }
+
+            lock (this)
+            {
+                if (currentMinuteBin.MinuteMillis != currMinuteMillis)
+                {
+                    globalHistogramBinsLock.EnterWriteLock();
+                    try
+                    {
+                        if (globalHistogramBinsList.Count > MaxBins)
+                        {
+                            globalHistogramBinsList.RemoveAt(0);
+                        }
+                        globalHistogramBinsList.Add(new ThreadMinuteBin(currentMinuteBin));
+                    }
+                    finally
+                    {
+                        globalHistogramBinsLock.ExitWriteLock();
+                    }
+                    currentMinuteBin = new ThreadMinuteBin(currMinuteMillis);
+                }
+                return currentMinuteBin;
+            }
+        }
+
+        private IList<ThreadMinuteBin> GetGlobalHistogramBinsList()
+        {
+            FlushCurrentBin(CurrentMinuteMillis());
+            return globalHistogramBinsList;
         }
 
         /// <summary>
@@ -423,7 +362,10 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
             /// </summary>
             /// <returns>The estimated value of the quantile.</returns>
             /// <param name="quantile">The quantile.</param>
-            public double GetValue(double quantile) => distribution.Quantile(quantile);
+            public double GetValue(double quantile)
+            {
+                return Count == 0 ? Double.NaN : distribution.Quantile(quantile);
+            }
         }
 
         /// <summary>
@@ -461,13 +403,13 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
         /// <summary>
         /// Representation of a bin that holds histogram data for a particular minute in time.
         /// </summary>
-        private class MinuteBin
+        private class ThreadMinuteBin
         {
             /// <summary>
-            /// Gets the histogram data for the minute bin, represented as a <see cref="TDigest"/>.
+            /// Gets the <see cref="TDigest"/> distribution for each thread in the given minute.
             /// </summary>
-            /// <value>The <see cref="TDigest"/> distribution.</value>
-            public TDigest Distribution { get; }
+            /// <value>The dictionary mapping thread id to TDigest distribution.</value>
+            public ConcurrentDictionary<int, TDigest> PerThreadDist { get; }
 
             /// <summary>
             /// Gets the timestamp at the start of the minute.
@@ -476,26 +418,78 @@ namespace Wavefront.CSharp.SDK.Entities.Histograms
             public long MinuteMillis { get; }
 
             /// <summary>
-            /// Initializes a new instance of the <see cref="MinuteBin"/> class.
+            /// Initializes a new instance of the <see cref="ThreadMinuteBin"/> class.
             /// </summary>
             /// <param name="minuteMillis">The start of the minute in milliseconds.</param>
-            public MinuteBin(double accuracy, double compression, long minuteMillis)
+            public ThreadMinuteBin(long minuteMillis)
             {
-                Distribution = new TDigest(accuracy, compression);
+                PerThreadDist = new ConcurrentDictionary<int, TDigest>();
                 MinuteMillis = minuteMillis;
             }
-        }
 
-        /// <summary>
-        /// A class that holds a list of minute bins along with a lock to handle concurrent
-        /// read/write access to the list. This is a workaround to get around the fact
-        /// that C# lacks a built-in concurrent collection that is ordered, can handle lookups
-        /// at both ends, and can handle element removal while enumerating.
-        /// </summary>
-        private class ConcurrentMinuteBinList
-        {
-            public List<MinuteBin> MinuteBins { get; } = new List<MinuteBin>();
-            public ReaderWriterLockSlim Lock { get; } = new ReaderWriterLockSlim();
+            /// <summary>
+            /// Copy constructor for appending ThreadMinuteBin to globalHistogramBinsList.
+            /// </summary>
+            /// <param name="threadMinuteBin">The thread minute bin to copy.</param>
+            public ThreadMinuteBin(ThreadMinuteBin threadMinuteBin)
+            {
+                PerThreadDist =
+                    new ConcurrentDictionary<int, TDigest>(threadMinuteBin.PerThreadDist);
+                MinuteMillis = threadMinuteBin.MinuteMillis;
+            }
+
+            /// <summary>
+            /// Retrieves the thread-local <see cref="TDigest"/> distribution in the given minute.
+            /// </summary>
+            /// <returns>The TDigest distribution.</returns>
+            /// <param name="threadId">The thread id.</param>
+            public TDigest GetDistByThreadId(int threadId)
+            {
+                return PerThreadDist.GetOrAdd(threadId, new TDigest(Accuracy, Compression));
+            }
+
+            /// <summary>
+            /// Adds a value to the thread-local <see cref="TDigest"/> distribution.
+            /// </summary>
+            /// <param name="threadId">The thread id.</param>
+            /// <param name="value">The value to add.</param>
+            public void UpdateByThreadId(int threadId, double value)
+            {
+                GetDistByThreadId(threadId).Add(value);
+            }
+
+            /// <summary>
+            /// Adds a set of centroids to the thread-local <see cref="TDigest"/> distribution.
+            /// </summary>
+            /// <param name="threadId">The thread id.</param>
+            /// <param name="means">The centroid values.</param>
+            /// <param name="counts">The centroid weights/sample counts.</param>
+            public void BulkUpdateByThreadId(int threadId, IList<double> means, IList<int> counts)
+            {
+                if (means != null && counts != null)
+                {
+                    TDigest dist = GetDistByThreadId(threadId);
+                    for (int i = 0; i < Math.Min(means.Count, counts.Count); ++i)
+                    {
+                        dist.Add(means[i], counts[i]);
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Converts to a <see cref="Distribution"/>.
+            /// </summary>
+            /// <returns>The distribution.</returns>
+            public Distribution ToDistribution()
+            {
+                var centroids = PerThreadDist.Values
+                                             .SelectMany(dist => dist.GetDistribution())
+                                             .Select(centroid => new KeyValuePair<double, int>(
+                                                 centroid.Value, (int)centroid.Count
+                                                ))
+                                             .ToList();
+                return new Distribution(MinuteMillis, centroids);
+            }
         }
     }
 }

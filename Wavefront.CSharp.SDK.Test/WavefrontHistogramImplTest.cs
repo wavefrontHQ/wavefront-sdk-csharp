@@ -141,9 +141,15 @@ namespace Wavefront.CSharp.SDK.Test
             var currentTime = DateTime.Now;
             long clockMillis() => ((DateTimeOffset)currentTime).ToUnixTimeMilliseconds();
 
-            var powSnapshot = CreatePowHistogram(clockMillis).GetSnapshot();
-            var rangeSnapshot = CreateRangeHistogram(clockMillis).GetSnapshot();
-            var multiThreadedSnapshot = CreateMultiThreadedHistogram(clockMillis).GetSnapshot();
+            var powHistogram = CreatePowHistogram(clockMillis);
+            var rangeHistogram = CreateRangeHistogram(clockMillis);
+            var multiThreadedHistogram = CreateMultiThreadedHistogram(clockMillis);
+
+            currentTime = currentTime.AddMinutes(1);
+
+            var powSnapshot = powHistogram.GetSnapshot();
+            var rangeSnapshot = rangeHistogram.GetSnapshot();
+            var multiThreadedSnapshot = multiThreadedHistogram.GetSnapshot();
 
             // Test snapshot for the pow histogram
 
