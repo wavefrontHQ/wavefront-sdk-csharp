@@ -1,4 +1,4 @@
-# wavefront-csharp-sdk [![travis build status](https://travis-ci.com/wavefrontHQ/wavefront-csharp-sdk.svg?branch=master)](https://travis-ci.com/wavefrontHQ/wavefront-csharp-sdk)
+# Wavefront CSharp SDK [![travis build status](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp.svg?branch=master)](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp)
 
 This package provides support for sending metrics, histograms and opentracing spans to Wavefront via proxy or direct ingestion.
 
@@ -10,7 +10,7 @@ This package provides support for sending metrics, histograms and opentracing sp
 ## Usage
 
 ### Send data to Wavefront via Proxy
-```
+```csharp
 /*
  * Assume you have a running Wavefront proxy listening on at least one of 
  * metrics/direct-distribution/tracing ports and you know the proxy hostname
@@ -41,7 +41,7 @@ var wavefrontProxyClient = builder.Build();
 wavefrontProxyClient.SendMetric(
     "new-york.power.usage",
     42422.0,
-    1533529977L,
+    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
     "localhost",
     new Dictionary<string, string> { { "datacenter", "dc1" } }.ToImmutableDictionary()
 );
@@ -85,7 +85,7 @@ wavefrontProxyClient.SendDistribution(
         HistogramGranularity.Hour,
         HistogramGranularity.Day
     ),
-    1533529977L,
+    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
     "appServer1",
     new Dictionary<string, string> { { "region", "us-west" } }.ToImmutableDictionary()
 );
@@ -104,7 +104,7 @@ wavefrontProxyClient.SendDistribution(
  */
 wavefrontProxyClient.SendSpan(
     "getAllUsers",
-    1533529977L,
+    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
     343500L,
     "localhost",
     new Guid("7b3bf470-9456-11e8-9eb6-529269fb1459"),
@@ -132,7 +132,7 @@ wavefrontProxyClient.Close();
 ```
 
 ### Send data to Wavefront via Direct Ingestion
-```
+```csharp
 /*
  * Assume you have a running Wavefront cluster and you know the 
  * server URL (example - https://mydomain.wavefront.com) and the API token
@@ -160,7 +160,7 @@ var wavefrontDirectIngestionClient = builder.Build();
 wavefrontDirectIngestionClient.SendMetric(
     "new-york.power.usage",
     42422.0,
-    1533529977L,
+    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
     "localhost",
     new Dictionary<string, string> { { "datacenter", "dc1" } }.ToImmutableDictionary()
 );
@@ -204,7 +204,7 @@ wavefrontDirectIngestionClient.SendDistribution(
         HistogramGranularity.Hour,
         HistogramGranularity.Day
     ),
-    1533529977L,
+    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
     "appServer1",
     new Dictionary<string, string> { { "region", "us-west" } }.ToImmutableDictionary()
 );
@@ -223,7 +223,7 @@ wavefrontDirectIngestionClient.SendDistribution(
  */
 wavefrontDirectIngestionClient.SendSpan(
     "getAllUsers",
-    1533529977L,
+    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
     343500L,
     "localhost",
     new Guid("7b3bf470-9456-11e8-9eb6-529269fb1459"),
