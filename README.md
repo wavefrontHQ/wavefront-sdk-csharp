@@ -1,4 +1,4 @@
-# Wavefront CSharp SDK [![travis build status](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp.svg?branch=master)](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp)
+# Wavefront C# SDK [![travis build status](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp.svg?branch=master)](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp)
 
 This package provides support for sending metrics, histograms and opentracing spans to Wavefront via proxy or direct ingestion.
 
