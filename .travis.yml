@@ -1,5 +1,5 @@
 language: csharp
-solution: Wavefront-SDK-CSharp.sln
+solution: Wavefront.SDK.CSharp.sln
 mono: none
 dotnet: 2.1.300
 
