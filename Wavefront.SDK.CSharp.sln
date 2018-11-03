@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{456CE097-21CF-45D7-B07D-BFDDF096D19D}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
+		docs\apptags.md = docs\apptags.md
 	EndProjectSection
 EndProject
 Global
@@ -33,5 +34,7 @@ Global
 		$1.FileWidth = 100
 		$0.CSharpFormattingPolicy = $2
 		$2.scope = text/x-csharp
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
 EndGlobal
