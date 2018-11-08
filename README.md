@@ -75,7 +75,7 @@ IWavefrontSender wavefrontSender = wfDirectIngestionClientBuilder.Build();
  
 ## Send Data to Wavefront
 
- To send data to Wavefront using the `WavefrontSender` you instantiated:
+ To send data to Wavefront using the `IWavefrontSender` you instantiated:
 
 ### Metrics and Delta Counters
 
@@ -114,11 +114,11 @@ wavefrontSender.SendDeltaCounter(
 // "!D 1533529977 #20 30.0 #10 5.1 request.latency source=appServer1 region=us-west"
 wavefrontSender.SendDistribution(
     "request.latency",
-    ImmutableList.Create<KeyValuePair<double, int>>(
+    ImmutableList.Create(
         new KeyValuePair<double, int>(30.0, 20),
         new KeyValuePair<double, int>(5.1, 10)
     ),
-    ImmutableHashSet.Create<HistogramGranularity>(
+    ImmutableHashSet.Create(
         HistogramGranularity.Minute,
         HistogramGranularity.Hour,
         HistogramGranularity.Day
@@ -147,9 +147,9 @@ wavefrontSender.SendSpan(
     "localhost",
     new Guid("7b3bf470-9456-11e8-9eb6-529269fb1459"),
     new Guid("0313bafe-9457-11e8-9eb6-529269fb1459"),
-    ImmutableList.Create<Guid>(new Guid("2f64e538-9457-11e8-9eb6-529269fb1459")),
+    ImmutableList.Create(new Guid("2f64e538-9457-11e8-9eb6-529269fb1459")),
     null,
-    ImmutableList.Create<KeyValuePair<string, string>>(
+    ImmutableList.Create(
         new KeyValuePair<string, string>("application", "Wavefront"),
         new KeyValuePair<string, string>("http.method", "GET")
     ),

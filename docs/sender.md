@@ -10,7 +10,7 @@ IWavefrontSender wavefrontSender = BuildProxyOrDirectSender(config);
 
 // Create a Wavefront open tracing reporter
 IReporter spanReporter = new WavefrontSpanReporter.Builder()
-  .WithSource("wavefront-tracing-example").
+  .WithSource("wavefront-tracing-example")
   .Build(wavefrontSender);
 
 // Create an App Metrics registry that reports to Wavefront

@@ -21,13 +21,13 @@ string service = "inventory";
 string cluster = "us-west-2";
 string shard = "secondary";
 
-var customTags = new Dictionary<string, string>
+IDictionary<string, string> customTags = new Dictionary<string, string>
 {
   { "location", "Oregon" },
   { "env", "Staging" }
 };
 
-var applicationTags = new ApplicationTags.Builder(application, service)
+ApplicationTags applicationTags = new ApplicationTags.Builder(application, service)
   .Cluster(cluster)       // optional
   .Shard(shard)           // optional
   .CustomTags(customTags) // optional
