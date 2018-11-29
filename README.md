@@ -11,6 +11,9 @@ This package provides support for sending metrics, histograms and opentracing sp
 
 ### Send data to Wavefront via Proxy
 ```
+using Wavefront.CSharp.SDK.Integrations;
+using Wavefront.CSharp.SDK.Entities.Metrics;
+
 /*
  * Assume you have a running Wavefront proxy listening on at least one of 
  * metrics/direct-distribution/tracing ports and you know the proxy hostname
@@ -133,6 +136,9 @@ wavefrontProxyClient.Close();
 
 ### Send data to Wavefront via Direct Ingestion
 ```
+using Wavefront.CSharp.SDK.DirectIngestion;
+using Wavefront.CSharp.SDK.Entities.Metrics;
+
 /*
  * Assume you have a running Wavefront cluster and you know the 
  * server URL (example - https://mydomain.wavefront.com) and the API token
