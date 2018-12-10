@@ -72,7 +72,7 @@ wfDirectIngestionClientBuilder.FlushIntervalSeconds(2);
 // Finally create a WavefrontDirectIngestionClient
 IWavefrontSender wavefrontSender = wfDirectIngestionClientBuilder.Build();
 ```
- 
+
 ## Send Data to Wavefront
 
  To send data to Wavefront using the `IWavefrontSender` you instantiated:
