@@ -4,9 +4,15 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackOnBuild>true</PackOnBuild>
     <PackageId>Wavefront.SDK.CSharp</PackageId>
-    <PackageVersion>0.1.0</PackageVersion>
+    <PackageVersion>1.0</PackageVersion>
     <Authors>Wavefront</Authors>
     <Description>This package provides support for sending metrics, histograms and opentracing spans to Wavefront via proxy or direct ingestion.</Description>
+    <PackageLicenseUrl>https://github.com/wavefrontHQ/wavefront-sdk-csharp/blob/master/LICENSE</PackageLicenseUrl>
+    <Title>Wavefront by VMware SDK for C#</Title>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <NoWarn>NU1701</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
