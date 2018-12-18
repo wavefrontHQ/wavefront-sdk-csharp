@@ -1,4 +1,4 @@
-# Set Up a WavefrontSender
+# Set Up an IWavefrontSender Instance
 You can choose to send metrics, histograms, or trace data from your application to the Wavefront service using one of the following techniques:
 * Use [direct ingestion](https://docs.wavefront.com/direct_ingestion.html) to send the data directly to the Wavefront service. This is the simplest way to get up and running quickly.
 * Use a [Wavefront proxy](https://docs.wavefront.com/proxies.html), which then forwards the data to the Wavefront service. This is the recommended choice for a large-scale deployment that needs resilience to internet outages, control over data queuing and filtering, and more. 
