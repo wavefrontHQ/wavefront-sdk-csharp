@@ -84,7 +84,7 @@ IWavefrontSender wavefrontSender = wfProxyClientBuilder.Build();
 | `DistributionPort()` | `histogramDistListenerPort=` |
 | `TracingPort()` | `traceListenerPort=` |
  
-# Share a WavefrontSender
+# Share an IWavefrontSender Instance
 
 Several Wavefront SDKs for C# use this library and require an `IWavefrontSender` instance.
 
