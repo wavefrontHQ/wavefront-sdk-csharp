@@ -1,4 +1,4 @@
-# Wavefront by VMware SDK for C# [![travis build status](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp.svg?branch=master)](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp)
+# Wavefront by VMware SDK for C# [![travis build status](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp.svg?branch=master)](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp) [![NuGet](https://img.shields.io/nuget/v/Wavefront.SDK.CSharp.svg)](https://www.nuget.org/packages/Wavefront.SDK.CSharp)
 
 Wavefront by VMware SDK for C# is the core library for sending metrics, histograms and trace data from your .NET application to Wavefront using an `IWavefrontSender` interface.
 
