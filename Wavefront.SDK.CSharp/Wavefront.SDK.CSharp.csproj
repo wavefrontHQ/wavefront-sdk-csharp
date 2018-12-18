@@ -1,35 +1,34 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <PackOnBuild>true</PackOnBuild>
+    <NoWarn>NU1701</NoWarn>
     <PackageId>Wavefront.SDK.CSharp</PackageId>
     <PackageVersion>1.0</PackageVersion>
+    <Title>Wavefront by VMware SDK for C#</Title>
     <Authors>Wavefront</Authors>
     <Description>This package provides support for sending metrics, histograms and opentracing spans to Wavefront via proxy or direct ingestion.</Description>
     <PackageLicenseUrl>https://github.com/wavefrontHQ/wavefront-sdk-csharp/blob/master/LICENSE</PackageLicenseUrl>
-    <Title>Wavefront by VMware SDK for C#</Title>
+    <PackageProjectUrl>https://github.com/wavefrontHQ/wavefront-sdk-csharp</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>git://github.com/wavefrontHQ/wavefront-sdk-csharp</RepositoryUrl>
+    <PackageTags>Wavefront;VMware;monitoring;metrics;tracing</PackageTags>
   </PropertyGroup>
-
-  <PropertyGroup>
-    <NoWarn>NU1701</NoWarn>
-  </PropertyGroup>
-
   <ItemGroup>
-    <Folder Include="Proxy\" />
     <Folder Include="Common\" />
+    <Folder Include="Common\Application\" />
+    <Folder Include="DirectIngestion\" />
     <Folder Include="Entities\" />
+    <Folder Include="Entities\Events\" />
     <Folder Include="Entities\Histograms\" />
     <Folder Include="Entities\Metrics\" />
     <Folder Include="Entities\Tracing\" />
-    <Folder Include="Entities\Events\" />
-    <Folder Include="DirectIngestion\" />
-    <Folder Include="Common\Application\" />
+    <Folder Include="Proxy\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
-    <PackageReference Include="NuGet.Build.Packaging" Version="0.2.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.1" />
+    <PackageReference Include="NuGet.Build.Packaging" Version="0.2.2" />
     <PackageReference Include="TDigest" Version="1.0.6" />
   </ItemGroup>
 </Project>
