@@ -19,7 +19,7 @@ To create a WavefrontProxyClient, you specify the proxy host and one or more por
 
 Before data can be sent from your application, you must ensure the Wavefront proxy is configured and running:
 * [Install](http://docs.wavefront.com/proxies_installing.html) a Wavefront proxy on the specified proxy host if necessary.
-* [Configure](http://docs.wavefront.com/proxies_configuring.html) the proxy to listen on the specified port(s) by setting the corresponding properties: `pushListenerPort`, `histogramDistListenerPort`, `traceListenerPort`
+* [Configure](http://docs.wavefront.com/proxies_configuring.html) the proxy to listen on the specified port(s) by setting the corresponding properties: `pushListenerPorts`, `histogramDistListenerPorts`, `traceListenerPorts`
 * Start (or restart) the proxy.
 
 ```csharp
