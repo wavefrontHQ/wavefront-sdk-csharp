@@ -80,9 +80,9 @@ IWavefrontSender wavefrontSender = wfProxyClientBuilder.Build();
 
 | `WavefrontProxyClient` builder method | Corresponding property in `wavefront.conf` |
 | ----- | -------- |
-| `MetricsPort()` | `pushListenerPort=` |
-| `DistributionPort()` | `histogramDistListenerPort=` |
-| `TracingPort()` | `traceListenerPort=` |
+| `MetricsPort()` | `pushListenerPorts=` |
+| `DistributionPort()` | `histogramDistListenerPorts=` |
+| `TracingPort()` | `traceListenerPorts=` |
  
 # Share an IWavefrontSender Instance
 
