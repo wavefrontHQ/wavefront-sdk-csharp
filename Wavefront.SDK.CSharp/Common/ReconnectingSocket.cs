@@ -47,10 +47,13 @@ namespace Wavefront.SDK.CSharp.Common
             Connect();
         }
 
+        /// <summary>
+        /// Blocks while attempting to establish a connection.
+        /// </summary>
         [MethodImpl(MethodImplOptions.Synchronized)]
         private void Connect()
         {
-            _ = ConnectAsync(false);
+            ConnectAsync(false).GetAwaiter().GetResult();
         }
 
         private async Task ConnectAsync(bool isReset)
