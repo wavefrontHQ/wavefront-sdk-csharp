@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using Wavefront.SDK.CSharp.Common;
 
 namespace Wavefront.SDK.CSharp.Proxy
@@ -14,14 +13,12 @@ namespace Wavefront.SDK.CSharp.Proxy
         private readonly string host;
         private readonly int port;
         private volatile ReconnectingSocket reconnectingSocket;
-        private volatile int failures;
 
         protected internal ProxyConnectionHandler(string host, int port)
         {
             this.host = host;
             this.port = port;
             reconnectingSocket = null;
-            failures = 0;
         }
 
         /// <summary>
@@ -39,7 +36,6 @@ namespace Wavefront.SDK.CSharp.Proxy
                 reconnectingSocket = new ReconnectingSocket(host, port);
             }
             catch (Exception e)
-
             {
                 throw new IOException(e.Message, e);
             }
@@ -66,15 +62,7 @@ namespace Wavefront.SDK.CSharp.Proxy
         /// <see cref="IBufferFlusher.GetFailureCount" />
         public int GetFailureCount()
         {
-            return failures;
-        }
-
-        /// <summary>
-        /// Increments the failure count by 1.
-        /// </summary>
-        public void IncrementFailureCount()
-        {
-            Interlocked.Increment(ref failures);
+            return reconnectingSocket != null ? reconnectingSocket.GetFailureCount() : 0;
         }
 
         /// <summary>

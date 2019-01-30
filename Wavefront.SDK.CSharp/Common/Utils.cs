@@ -19,7 +19,7 @@ namespace Wavefront.SDK.CSharp.Common
         /// </summary>
         /// <returns>The sanitized string.</returns>
         /// <param name="s">The string to be sanitized.</param>
-        public static string Sanitize(String s)
+        public static string Sanitize(string s)
         {
             var whitespaceSanitized = WhitespaceRegex.Replace(s, "-");
             if (s.Contains("\"") || s.Contains("'"))
@@ -59,12 +59,12 @@ namespace Wavefront.SDK.CSharp.Common
              * Example: "new-york.power.usage 42422 1533531013 source=localhost datacenter=dc1"
              */
 
-            if (String.IsNullOrWhiteSpace(name))
+            if (string.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentException("metric name cannot be blank");
             }
 
-            if (String.IsNullOrWhiteSpace(source))
+            if (string.IsNullOrWhiteSpace(source))
             {
                 source = defaultSource;
             }
@@ -84,11 +84,11 @@ namespace Wavefront.SDK.CSharp.Common
             {
                 foreach (var tag in tags)
                 {
-                    if (String.IsNullOrWhiteSpace(tag.Key))
+                    if (string.IsNullOrWhiteSpace(tag.Key))
                     {
                         throw new ArgumentException("metric point tag key cannot be blank");
                     }
-                    if (String.IsNullOrWhiteSpace(tag.Value))
+                    if (string.IsNullOrWhiteSpace(tag.Value))
                     {
                         throw new ArgumentException("metric point tag value cannot be blank");
                     }
@@ -139,7 +139,7 @@ namespace Wavefront.SDK.CSharp.Common
              *   region=us-west"
              */
 
-            if (String.IsNullOrWhiteSpace(name))
+            if (string.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentException("histogram name cannot be blank");
             }
@@ -154,7 +154,7 @@ namespace Wavefront.SDK.CSharp.Common
                 );
             }
 
-            if (String.IsNullOrWhiteSpace(source))
+            if (string.IsNullOrWhiteSpace(source))
             {
                 source = defaultSource;
             }
@@ -191,11 +191,11 @@ namespace Wavefront.SDK.CSharp.Common
                 {
                     foreach (var tag in tags)
                     {
-                        if (String.IsNullOrWhiteSpace(tag.Key))
+                        if (string.IsNullOrWhiteSpace(tag.Key))
                         {
                             throw new ArgumentException("histogram tag key cannot be blank");
                         }
-                        if (String.IsNullOrWhiteSpace(tag.Value))
+                        if (string.IsNullOrWhiteSpace(tag.Value))
                         {
                             throw new ArgumentException("histogram tag value cannot be blank");
                         }
@@ -233,7 +233,7 @@ namespace Wavefront.SDK.CSharp.Common
         /// <param name="defaultSource">
         /// The source to default to if the source parameter is null.
         /// </param>
-        public static String TracingSpanToLineData(string name,
+        public static string TracingSpanToLineData(string name,
                                                    long startMillis,
                                                    long durationMillis,
                                                    string source,
@@ -256,12 +256,12 @@ namespace Wavefront.SDK.CSharp.Common
              *           application=Wavefront http.method=GET
              *           1533531013 343500"
              */
-            if (String.IsNullOrWhiteSpace(name))
+            if (string.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentException("span name cannot be blank");
             }
 
-            if (String.IsNullOrWhiteSpace(source))
+            if (string.IsNullOrWhiteSpace(source))
             {
                 source = defaultSource;
             }
@@ -294,11 +294,11 @@ namespace Wavefront.SDK.CSharp.Common
             {
                 foreach (var tag in tags)
                 {
-                    if (String.IsNullOrWhiteSpace(tag.Key))
+                    if (string.IsNullOrWhiteSpace(tag.Key))
                     {
                         throw new ArgumentException("span tag key cannot be blank");
                     }
-                    if (String.IsNullOrWhiteSpace(tag.Value))
+                    if (string.IsNullOrWhiteSpace(tag.Value))
                     {
                         throw new ArgumentException("span tag value cannot be blank");
                     }
