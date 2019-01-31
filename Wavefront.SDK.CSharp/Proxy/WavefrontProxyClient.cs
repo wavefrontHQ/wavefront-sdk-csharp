@@ -171,21 +171,13 @@ namespace Wavefront.SDK.CSharp.Proxy
 
             try
             {
-                try
-                {
-                    String lineData =
-                        Utils.MetricToLineData(name, value, timestamp, source, tags, defaultSource);
-                    metricsProxyConnectionHandler.SendData(lineData);
-                }
-                catch (Exception e)
-                {
-                    throw new IOException(e.Message, e);
-                }
+                string lineData =
+                    Utils.MetricToLineData(name, value, timestamp, source, tags, defaultSource);
+                metricsProxyConnectionHandler.SendData(lineData);
             }
-            catch (IOException e)
+            catch (Exception e)
             {
-                metricsProxyConnectionHandler.IncrementFailureCount();
-                throw e;
+                throw new IOException(e.Message, e);
             }
         }
 
@@ -214,23 +206,15 @@ namespace Wavefront.SDK.CSharp.Proxy
 
             try
             {
-                try
-                {
-                    String lineData = Utils.HistogramToLineData(name, centroids,
-                                                                histogramGranularities,
-                                                                timestamp, source, tags,
-                                                                defaultSource);
-                    histogramProxyConnectionHandler.SendData(lineData);
-                }
-                catch (Exception e)
-                {
-                    throw new IOException(e.Message, e);
-                }
+                string lineData = Utils.HistogramToLineData(name, centroids,
+                                                            histogramGranularities,
+                                                            timestamp, source, tags,
+                                                            defaultSource);
+                histogramProxyConnectionHandler.SendData(lineData);
             }
-            catch (IOException e)
+            catch (Exception e)
             {
-                histogramProxyConnectionHandler.IncrementFailureCount();
-                throw e;
+                throw new IOException(e.Message, e);
             }
         }
 
@@ -259,23 +243,15 @@ namespace Wavefront.SDK.CSharp.Proxy
 
             try
             {
-                try
-                {
-                    String lineData = Utils.TracingSpanToLineData(name, startMillis, durationMillis,
-                                                                  source, traceId, spanId, parents,
-                                                                  followsFrom, tags, spanLogs,
-                                                                  defaultSource);
-                    tracingProxyConnectionHandler.SendData(lineData);
-                }
-                catch (Exception e)
-                {
-                    throw new IOException(e.Message, e);
-                }
+                string lineData = Utils.TracingSpanToLineData(name, startMillis, durationMillis,
+                                                              source, traceId, spanId, parents,
+                                                              followsFrom, tags, spanLogs,
+                                                              defaultSource);
+                tracingProxyConnectionHandler.SendData(lineData);
             }
-            catch (IOException e)
+            catch (Exception e)
             {
-                tracingProxyConnectionHandler.IncrementFailureCount();
-                throw e;
+                throw new IOException(e.Message, e);
             }
         }
 
