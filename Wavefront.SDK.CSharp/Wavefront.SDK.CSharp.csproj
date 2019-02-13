@@ -1,18 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
-	<TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">$(TargetFrameworks);net452;net46</TargetFrameworks>
-	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">$(TargetFrameworks);net452;net46</TargetFrameworks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoWarn>NU1701</NoWarn>
     <PackageId>Wavefront.SDK.CSharp</PackageId>
-	<Version>1.1.1</Version>
+    <Version>1.1.1</Version>
     <Title>Wavefront by VMware SDK for C#</Title>
     <Authors>Wavefront</Authors>
     <Description>This package provides support for sending metrics, histograms and opentracing spans to Wavefront via proxy or direct ingestion.</Description>
     <PackageLicenseUrl>https://github.com/wavefrontHQ/wavefront-sdk-csharp/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/wavefrontHQ/wavefront-sdk-csharp</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>git://github.com/wavefrontHQ/wavefront-sdk-csharp</RepositoryUrl>
+    <RepositoryUrl>https://github.com/wavefrontHQ/wavefront-sdk-csharp</RepositoryUrl>
     <PackageTags>Wavefront;VMware;monitoring;metrics;tracing</PackageTags>
     <PackageReleaseNotes>https://github.com/wavefrontHQ/wavefront-sdk-csharp/releases/tag/v1.1.0</PackageReleaseNotes>
   </PropertyGroup>
@@ -28,7 +28,8 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging" Version="1.0.0" />
-	<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.0.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
     <PackageReference Include="TDigest" Version="1.0.6" />
   </ItemGroup>
 </Project>
