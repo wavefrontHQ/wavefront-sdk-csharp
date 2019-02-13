@@ -1,10 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <PackOnBuild>true</PackOnBuild>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+	<TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">$(TargetFrameworks);net452;net46</TargetFrameworks>
+	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoWarn>NU1701</NoWarn>
     <PackageId>Wavefront.SDK.CSharp</PackageId>
-    <PackageVersion>1.1.0</PackageVersion>
+	<Version>1.1.1</Version>
     <Title>Wavefront by VMware SDK for C#</Title>
     <Authors>Wavefront</Authors>
     <Description>This package provides support for sending metrics, histograms and opentracing spans to Wavefront via proxy or direct ingestion.</Description>
@@ -16,7 +17,6 @@
     <PackageReleaseNotes>https://github.com/wavefrontHQ/wavefront-sdk-csharp/releases/tag/v1.1.0</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
-    <Folder Include="Common\" />
     <Folder Include="Common\Application\" />
     <Folder Include="DirectIngestion\" />
     <Folder Include="Entities\" />
@@ -27,9 +27,8 @@
     <Folder Include="Proxy\" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.1" />
-    <PackageReference Include="NuGet.Build.Packaging" Version="0.2.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="1.0.0" />
+	<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.0.0" />
     <PackageReference Include="TDigest" Version="1.0.6" />
   </ItemGroup>
 </Project>

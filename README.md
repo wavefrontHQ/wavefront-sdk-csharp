@@ -2,10 +2,24 @@
 
 Wavefront by VMware SDK for C# is the core library for sending metrics, histograms and trace data from your .NET application to Wavefront using an `IWavefrontSender` interface.
 
-## Dependencies
+## Frameworks Supported
+  * .NET Framework (>= 4.5.2)
   * .NET Standard (>= 2.0)
-  * Microsoft.Extensions.Logging (>= 2.1.1)
-  * Microsoft.Extensions.Logging.Debug (>= 2.1.1)
+
+## Installation
+Install the [NuGet package](https://www.nuget.org/packages/Wavefront.SDK.CSharp/).
+
+### Package Manager Console
+
+```
+PM> Install-Package Wavefront.SDK.CSharp
+```
+
+### .NET CLI Console
+
+```
+> dotnet add package Wavefront.SDK.CSharp
+```
   
 ## Set Up an IWavefrontSender
 You can choose to send data to Wavefront using either the [Wavefront proxy](https://docs.wavefront.com/proxies.html) or [direct ingestion](https://docs.wavefront.com/direct_ingestion.html).

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using Wavefront.SDK.CSharp.Entities.Histograms;
@@ -315,6 +316,22 @@ namespace Wavefront.SDK.CSharp.Common
             // TODO - Support SpanLogs
             sb.Append('\n');
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Returns the local host name, or "unknown" if the local host name cannot be resolved.
+        /// </summary>
+        /// <returns>The default source value.</returns>
+        public static string GetDefaultSource()
+        {
+            try
+            {
+                return Dns.GetHostName();
+            }
+            catch (Exception)
+            {
+                return "unknown";
+            }
         }
     }
 }

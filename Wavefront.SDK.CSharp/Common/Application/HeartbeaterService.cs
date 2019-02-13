@@ -20,7 +20,7 @@ namespace Wavefront.SDK.CSharp.Common.Application
         private Timer timer;
 
         public HeartbeaterService(
-            IWavefrontMetricSender wavefrontMetricSender,
+            IWavefrontMetricSender wavefrontMetricSender,   
             ApplicationTags applicationTags,
             string component,
             string source)
@@ -51,7 +51,7 @@ namespace Wavefront.SDK.CSharp.Common.Application
             try
             {
                 wavefrontMetricSender.SendMetric(Constants.HeartbeatMetric, 1.0,
-                                                 DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                                                 DateTimeUtils.UnixTimeMilliseconds(DateTime.UtcNow),
                                                  source, heartbeatMetricTags);
             }
             catch (Exception)

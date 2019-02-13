@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using Wavefront.SDK.CSharp.Common;
 using Wavefront.SDK.CSharp.Entities.Histograms;
 using Xunit;
 
@@ -63,14 +64,15 @@ namespace Wavefront.SDK.CSharp.Test
 
             foreach (var distribution in distributions)
             {
-                dict.TryAdd(distribution.Timestamp, new Dictionary<double, int>());
+                if (!dict.ContainsKey(distribution.Timestamp))
+                {
+                    dict.Add(distribution.Timestamp, new Dictionary<double, int>());
+                }
                 foreach (var centroid in distribution.Centroids)
                 {
-                    dict[distribution.Timestamp].Add(
-                        centroid.Key,
-                        dict[distribution.Timestamp].GetValueOrDefault(centroid.Key, 0) + 
-                            centroid.Value
-                    );
+                    int val = dict[distribution.Timestamp].ContainsKey(centroid.Key) ?
+                        dict[distribution.Timestamp][centroid.Key] : 0;
+                    dict[distribution.Timestamp][centroid.Key] = val + centroid.Value;
                 }
             }
 
@@ -80,8 +82,8 @@ namespace Wavefront.SDK.CSharp.Test
         [Fact]
         public void TestFlushDistributions()
         {
-            var currentTime = DateTime.Now;
-            long clockMillis() => ((DateTimeOffset)currentTime).ToUnixTimeMilliseconds();
+            var currentTime = DateTime.UtcNow;
+            long clockMillis() => DateTimeUtils.UnixTimeMilliseconds(currentTime);
 
             var wavefrontHistogram = CreatePowHistogram(clockMillis);
             long minute0ClockMillis = clockMillis() / 60000 * 60000;
@@ -138,8 +140,8 @@ namespace Wavefront.SDK.CSharp.Test
         [Fact]
         public void TestSnapshot()
         {
-            var currentTime = DateTime.Now;
-            long clockMillis() => ((DateTimeOffset)currentTime).ToUnixTimeMilliseconds();
+            var currentTime = DateTime.UtcNow;
+            long clockMillis() => DateTimeUtils.UnixTimeMilliseconds(currentTime);
 
             var powHistogram = CreatePowHistogram(clockMillis);
             var rangeHistogram = CreateRangeHistogram(clockMillis);
