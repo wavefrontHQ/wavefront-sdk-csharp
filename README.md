@@ -100,7 +100,7 @@ IWavefrontSender wavefrontSender = wfDirectIngestionClientBuilder.Build();
 wavefrontSender.SendMetric(
     "new-york.power.usage",
     42422.0,
-    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+    DateTimeUtils.UnixTimeMilliseconds(DateTime.UtcNow),
     "localhost",
     new Dictionary<string, string> { { "datacenter", "dc1" } }.ToImmutableDictionary()
 );
@@ -137,7 +137,7 @@ wavefrontSender.SendDistribution(
         HistogramGranularity.Hour,
         HistogramGranularity.Day
     ),
-    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+    DateTimeUtils.UnixTimeMilliseconds(DateTime.UtcNow),
     "appServer1",
     new Dictionary<string, string> { { "region", "us-west" } }.ToImmutableDictionary()
 );
@@ -156,7 +156,7 @@ wavefrontSender.SendDistribution(
  //           1533529977 343500"
 wavefrontSender.SendSpan(
     "getAllUsers",
-    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+    DateTimeUtils.UnixTimeMilliseconds(DateTime.UtcNow),
     343500L,
     "localhost",
     new Guid("7b3bf470-9456-11e8-9eb6-529269fb1459"),

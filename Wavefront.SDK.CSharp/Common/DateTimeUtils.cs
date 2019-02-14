@@ -15,24 +15,26 @@ namespace Wavefront.SDK.CSharp.Common
         private static readonly long UnixEpochMicroseconds = UnixEpochTicks / TicksPerMicrosecond;
 
         /// <summary>
-        /// Converts a UTC timestamp to the number of milliseconds elapsed since the Unix epoch.
+        /// Converts a <see cref="DateTime"/> object to the number of milliseconds elapsed since
+        /// the Unix epoch.
         /// </summary>
         /// <returns>The timestamp as milliseconds elapsed since the epoch.</returns>
-        /// <param name="utcDateTime">A UTC DateTime.</param>
-        public static long UnixTimeMilliseconds(DateTime utcDateTime)
+        /// <param name="dateTime">A <see cref="DateTime"/> object.</param>
+        public static long UnixTimeMilliseconds(DateTime dateTime)
         {
-            long milliseconds = utcDateTime.Ticks / TimeSpan.TicksPerMillisecond;
+            long milliseconds = dateTime.ToUniversalTime().Ticks / TimeSpan.TicksPerMillisecond;
             return milliseconds - UnixEpochMilliseconds;
         }
 
         /// <summary>
-        /// Converts a UTC timestamp to the number of microseconds elapsed since the Unix epoch.
+        /// Converts a <see cref="DateTime"/> object to the number of microseconds elapsed since
+        /// the Unix epoch.
         /// </summary>
         /// <returns>The timestamp as microseconds elapsed since the epoch.</returns>
-        /// <param name="utcDateTime">A UTC DateTime.</param>
-        public static long UnixTimeMicroseconds(DateTime utcDateTime)
+        /// <param name="dateTime">A <see cref="DateTime"/> object.</param>
+        public static long UnixTimeMicroseconds(DateTime dateTime)
         {
-            long microseconds = utcDateTime.Ticks / TicksPerMicrosecond;
+            long microseconds = dateTime.ToUniversalTime().Ticks / TicksPerMicrosecond;
             return microseconds - UnixEpochMicroseconds;
         }
 
