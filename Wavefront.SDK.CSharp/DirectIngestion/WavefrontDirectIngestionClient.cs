@@ -19,7 +19,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
     /// </summary>
     public class WavefrontDirectIngestionClient : IWavefrontSender
     {
-        private static readonly string DefaultSource = "wavefrontDirectSender";
+        private static readonly string DefaultSource = Utils.GetDefaultSource();
         private static readonly ILogger Logger =
             Logging.LoggerFactory.CreateLogger<WavefrontDirectIngestionClient>();
 
@@ -129,7 +129,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
 
             if (!metricsBuffer.TryAdd(lineData))
             {
-                Logger.Log(LogLevel.Trace, "Buffer full, dropping metric point: " + lineData);
+                Logger.LogTrace("Buffer full, dropping metric point: " + lineData);
             }
         }
 
@@ -145,7 +145,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                                                         timestamp, source, tags, DefaultSource);
             if (!histogramsBuffer.TryAdd(lineData))
             {
-                Logger.Log(LogLevel.Trace, "Buffer full, dropping histograms: " + lineData);
+                Logger.LogTrace("Buffer full, dropping histograms: " + lineData);
             }
         }
 
@@ -160,7 +160,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                                                        tags, spanLogs, DefaultSource);
             if (!tracingSpansBuffer.TryAdd(lineData))
             {
-                Logger.Log(LogLevel.Trace, "Buffer full, dropping span: " + lineData);
+                Logger.LogTrace("Buffer full, dropping span: " + lineData);
             }
         }
 
@@ -172,7 +172,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             }
             catch (Exception e)
             {
-                Logger.Log(LogLevel.Trace, "Unable to report to Wavefront cluster", e);
+                Logger.LogTrace("Unable to report to Wavefront cluster", e);
             }
         }
 
@@ -199,14 +199,12 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                     var statusCode = directService.Report(format, stream);
                     if (statusCode >= 400 && statusCode < 600)
                     {
-                        Logger.Log(LogLevel.Trace,
-                                   "Error reporting points, respStatus=" + statusCode);
+                        Logger.LogTrace("Error reporting points, respStatus=" + statusCode);
                         foreach (var item in batch)
                         {
                             if (!buffer.TryAdd(item))
                             {
-                                Logger.Log(LogLevel.Trace,
-                                           "Buffer full, dropping attempted points");
+                                Logger.LogTrace("Buffer full, dropping attempted points");
                             }
                         }
                     }
@@ -258,7 +256,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             }
             catch (IOException e)
             {
-                Logger.Log(LogLevel.Warning, "error flushing buffer", e);
+                Logger.LogWarning("error flushing buffer", e);
             }
 
             timer.Dispose();

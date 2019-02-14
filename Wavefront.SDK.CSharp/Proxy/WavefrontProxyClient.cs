@@ -25,7 +25,7 @@ namespace Wavefront.SDK.CSharp.Proxy
         private Timer timer;
 
         // Source to use if entity source is null
-        private readonly string defaultSource = Dns.GetHostEntry("LocalHost").HostName;
+        private readonly string defaultSource = Utils.GetDefaultSource();
 
         public class Builder
         {
@@ -263,7 +263,7 @@ namespace Wavefront.SDK.CSharp.Proxy
             }
             catch (Exception e)
             {
-                Logger.Log(LogLevel.Trace, "Unable to report to Wavefront cluster", e);
+                Logger.LogTrace("Unable to report to Wavefront cluster", e);
             }
         }
 
@@ -319,7 +319,7 @@ namespace Wavefront.SDK.CSharp.Proxy
             }
             catch (IOException e)
             {
-                Logger.Log(LogLevel.Warning, "error flushing buffer", e);
+                Logger.LogWarning("error flushing buffer", e);
             }
 
             timer.Dispose();
@@ -332,7 +332,7 @@ namespace Wavefront.SDK.CSharp.Proxy
                 }
                 catch (IOException e)
                 {
-                    Logger.Log(LogLevel.Warning, "error closing metricsProxyConnectionHandler", e);
+                    Logger.LogWarning("error closing metricsProxyConnectionHandler", e);
                 }
             }
 
@@ -344,8 +344,7 @@ namespace Wavefront.SDK.CSharp.Proxy
                 }
                 catch (IOException e)
                 {
-                    Logger.Log(LogLevel.Warning,
-                               "error closing histogramProxyConnectionHandler", e);
+                    Logger.LogWarning("error closing histogramProxyConnectionHandler", e);
                 }
             }
 
@@ -357,7 +356,7 @@ namespace Wavefront.SDK.CSharp.Proxy
                 }
                 catch (IOException e)
                 {
-                    Logger.Log(LogLevel.Warning, "error closing tracingProxyConnectionHandler", e);
+                    Logger.LogWarning("error closing tracingProxyConnectionHandler", e);
                 }
             }
         }

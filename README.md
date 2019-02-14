@@ -2,10 +2,24 @@
 
 Wavefront by VMware SDK for C# is the core library for sending metrics, histograms and trace data from your .NET application to Wavefront using an `IWavefrontSender` interface.
 
-## Dependencies
+## Frameworks Supported
+  * .NET Framework (>= 4.5.2)
   * .NET Standard (>= 2.0)
-  * Microsoft.Extensions.Logging (>= 2.1.1)
-  * Microsoft.Extensions.Logging.Debug (>= 2.1.1)
+
+## Installation
+Install the [NuGet package](https://www.nuget.org/packages/Wavefront.SDK.CSharp/).
+
+### Package Manager Console
+
+```
+PM> Install-Package Wavefront.SDK.CSharp
+```
+
+### .NET CLI Console
+
+```
+> dotnet add package Wavefront.SDK.CSharp
+```
   
 ## Set Up an IWavefrontSender
 You can choose to send data to Wavefront using either the [Wavefront proxy](https://docs.wavefront.com/proxies.html) or [direct ingestion](https://docs.wavefront.com/direct_ingestion.html).
@@ -86,7 +100,7 @@ IWavefrontSender wavefrontSender = wfDirectIngestionClientBuilder.Build();
 wavefrontSender.SendMetric(
     "new-york.power.usage",
     42422.0,
-    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+    DateTimeUtils.UnixTimeMilliseconds(DateTime.UtcNow),
     "localhost",
     new Dictionary<string, string> { { "datacenter", "dc1" } }.ToImmutableDictionary()
 );
@@ -123,7 +137,7 @@ wavefrontSender.SendDistribution(
         HistogramGranularity.Hour,
         HistogramGranularity.Day
     ),
-    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+    DateTimeUtils.UnixTimeMilliseconds(DateTime.UtcNow),
     "appServer1",
     new Dictionary<string, string> { { "region", "us-west" } }.ToImmutableDictionary()
 );
@@ -142,7 +156,7 @@ wavefrontSender.SendDistribution(
  //           1533529977 343500"
 wavefrontSender.SendSpan(
     "getAllUsers",
-    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+    DateTimeUtils.UnixTimeMilliseconds(DateTime.UtcNow),
     343500L,
     "localhost",
     new Guid("7b3bf470-9456-11e8-9eb6-529269fb1459"),

@@ -28,6 +28,10 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
         {
             this.token = token;
             uri = new Uri(server);
+
+#if NET452
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+#endif
         }
 
         /// <see cref="IDataIngesterAPI.Report(string, Stream)"/>

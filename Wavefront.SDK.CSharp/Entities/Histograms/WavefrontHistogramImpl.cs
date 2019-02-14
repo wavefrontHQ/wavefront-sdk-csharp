@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using StatsLib;
+using Wavefront.SDK.CSharp.Common;
 
 namespace Wavefront.SDK.CSharp.Entities.Histograms
 {
@@ -44,7 +45,8 @@ namespace Wavefront.SDK.CSharp.Entities.Histograms
         /// Initializes a new instance of the <see cref="WavefrontHistogramImpl"/> class
         /// with timestamps taken as current UTC time. 
         /// </summary>
-        public WavefrontHistogramImpl() : this(() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds())
+        public WavefrontHistogramImpl() :
+            this(() => DateTimeUtils.UnixTimeMilliseconds(DateTime.UtcNow))
         {
         }
 

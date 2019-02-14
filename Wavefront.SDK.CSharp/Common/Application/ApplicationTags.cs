@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 
 namespace Wavefront.SDK.CSharp.Common.Application
 {
@@ -119,6 +120,34 @@ namespace Wavefront.SDK.CSharp.Common.Application
                     CustomTags = customTags
                 };
             }
+        }
+
+        /// <summary>
+        /// Converts ApplicationTags to an <see cref="ImmutableDictionary"/> of point tags.
+        /// </summary>
+        /// <returns>An immutable dictionary of point tags.</returns>
+        public IDictionary<string, string> ToPointTags()
+        {
+            var pointTags = new Dictionary<string, string>
+            {
+                { Constants.ApplicationTagKey, Application },
+                { Constants.ClusterTagKey, Cluster ?? Constants.NullTagValue },
+                { Constants.ServiceTagKey, Service },
+                { Constants.ShardTagKey, Shard ?? Constants.NullTagValue }
+            };
+
+            if (CustomTags != null)
+            {
+                foreach (var customTag in CustomTags)
+                {
+                    if (!pointTags.ContainsKey(customTag.Key))
+                    {
+                        pointTags.Add(customTag.Key, customTag.Value);
+                    }
+                }
+            }
+
+            return pointTags.ToImmutableDictionary();
         }
     }
 }
