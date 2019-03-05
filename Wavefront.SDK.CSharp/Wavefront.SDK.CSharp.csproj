@@ -5,7 +5,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoWarn>NU1701</NoWarn>
     <PackageId>Wavefront.SDK.CSharp</PackageId>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <Title>Wavefront by VMware SDK for C#</Title>
     <Authors>Wavefront</Authors>
     <Description>This package provides support for sending metrics, histograms and opentracing spans to Wavefront via proxy or direct ingestion.</Description>
@@ -14,7 +14,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/wavefrontHQ/wavefront-sdk-csharp</RepositoryUrl>
     <PackageTags>Wavefront;VMware;monitoring;metrics;tracing</PackageTags>
-    <PackageReleaseNotes>https://github.com/wavefrontHQ/wavefront-sdk-csharp/releases/tag/v1.2.0</PackageReleaseNotes>
+    <PackageReleaseNotes>https://github.com/wavefrontHQ/wavefront-sdk-csharp/releases/tag/v1.2.1</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Common\Application\" />
