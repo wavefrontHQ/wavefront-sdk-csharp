@@ -47,8 +47,8 @@ WavefrontProxyClient.Builder wfProxyClientBuilder = new WavefrontProxyClient.Bui
 // Set the pushListenerPort (example: 2878) to send metrics to Wavefront
 wfProxyClientBuilder.MetricsPort(2878);
 
-// Set the histogramDistListenerPort (example: 40,000) to send histograms to Wavefront
-wfProxyClientBuilder.DistributionPort(40_000);
+// Set the histogramDistListenerPort (example: 2878) to send histograms to Wavefront
+wfProxyClientBuilder.DistributionPort(2878);
 
 // Set the traceListenerPort (example: 30,000) to send opentracing spans to Wavefront
 wfProxyClientBuilder.TracingPort(30_000);
