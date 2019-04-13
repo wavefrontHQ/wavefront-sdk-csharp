@@ -7,13 +7,22 @@ namespace Wavefront.SDK.CSharp.Entities.Tracing
     /// </summary>
     public class SpanLog
     {
-        private readonly long timestamp;
-        private readonly IDictionary<string, string> fields;
+        /// <summary>
+        ///     Epoch timestamp in microseconds.
+        /// </summary>
+        /// <value>The epoch timestamp in microseconds.</value>
+        public long TimestampMicros { get; private set; }
 
-        public SpanLog(long timestamp, IDictionary<string, string> fields)
+        /// <summary>
+        ///     Dictionary of fields associated with the span log.
+        /// </summary>
+        /// <value>The dictionary of fields.</value>
+        public IDictionary<string, string> Fields { get; private set; }
+
+        public SpanLog(long timestampMicros, IDictionary<string, string> fields)
         {
-            this.timestamp = timestamp;
-            this.fields = fields;
+            TimestampMicros = timestampMicros;
+            Fields = fields;
         }
     }
 }

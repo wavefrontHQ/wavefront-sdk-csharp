@@ -313,7 +313,83 @@ namespace Wavefront.SDK.CSharp.Common
             sb.Append(startMillis);
             sb.Append(' ');
             sb.Append(durationMillis);
-            // TODO - Support SpanLogs
+            sb.Append('\n');
+            return sb.ToString();
+        }
+
+        public static string SpanLogsToLineData(long startMillis,
+                                                long durationMillis,
+                                                Guid traceId,
+                                                Guid spanId,
+                                                IList<SpanLog> spanLogs)
+        {
+            /*
+             * Wavefront Span Log Data format
+             * Example:
+             *  {            
+             *      "traceId": "7b3bf470-9456-11e8-9eb6-529269fb1459",
+             *      "spanId": "0313bafe-9457-11e8-9eb6-529269fb1459",
+             *      "logs": [
+             *          {
+             *              "timestamp": "1554363517965",
+             *              "fields": {
+             *                  "event": "error",
+             *                  "error.kind": "exception",
+             *                  "message": "timed out",
+             *                  "stack": "File \"example.py\", line 7, in \<module\>\ncaller()\nFile \"example.py\""
+             *              }
+             *          }
+             *      ]
+             *  }
+             */
+            var sb = new StringBuilder();
+            sb.Append("{");
+            sb.Append("\"traceId\":");
+            sb.Append("\"" + traceId + "\",");
+            sb.Append("\"spanId\":");
+            sb.Append("\"" + spanId + "\",");
+            sb.Append("\"logs\":[");
+
+            bool hasValidSpanLog = false;
+            foreach (SpanLog spanLog in spanLogs)
+            {
+                if (spanLog.TimestampMicros < startMillis * 1000 ||
+                    spanLog.TimestampMicros > (startMillis + durationMillis) * 1000)
+                {
+                    continue;
+                }
+                if (hasValidSpanLog)
+                {
+                    sb.Append(",");
+                }
+                hasValidSpanLog = true;
+                sb.Append("{");
+                sb.Append("\"timestamp\":");
+                sb.Append("\"" + spanLog.TimestampMicros + "\",");
+                sb.Append("\"fields\":");
+                sb.Append("{");
+                string separator = "";
+                foreach (var field in spanLog.Fields)
+                {
+                    if (!string.IsNullOrEmpty(field.Key) && !string.IsNullOrEmpty(field.Value))
+                    {
+                        sb.Append(separator);
+                        sb.Append(Sanitize(field.Key) + ":");
+                        sb.Append(Sanitize(field.Value));
+                        separator = ",";
+                    }
+                }
+                sb.Append("}");
+                sb.Append("}");
+            }
+
+            if (!hasValidSpanLog)
+            {
+                return null;
+            }
+
+            sb.Append("]");
+            sb.Append("}");
             sb.Append('\n');
             return sb.ToString();
         }
@@ -332,6 +408,15 @@ namespace Wavefront.SDK.CSharp.Common
             {
                 return "unknown";
             }
+        }
+
+        /// <summary>
+        ///     Add spanLogs=true tag to the given list of tags.
+        /// </summary>
+        /// <param name="tags">The list of tags.</param>
+        public static void AddSpanLogIndicatorTag(IList<KeyValuePair<string, string>> tags)
+        {
+            tags.Add(new KeyValuePair<string, string>("spanLogs", "true"));
         }
     }
 }

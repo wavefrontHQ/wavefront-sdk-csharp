@@ -241,13 +241,31 @@ namespace Wavefront.SDK.CSharp.Proxy
                 }
             }
 
+            string spanLogsLineData = null;
+
+            if (spanLogs != null && spanLogs.Count > 0)
+            {
+                if (tags == null)
+                {
+                    tags = new List<KeyValuePair<string, string>>();
+                }
+                Utils.AddSpanLogIndicatorTag(tags);
+
+                spanLogsLineData = Utils.SpanLogsToLineData(
+                        startMillis, durationMillis, traceId, spanId, spanLogs);
+            }
+
             try
             {
-                string lineData = Utils.TracingSpanToLineData(name, startMillis, durationMillis,
-                                                              source, traceId, spanId, parents,
-                                                              followsFrom, tags, spanLogs,
-                                                              defaultSource);
-                tracingProxyConnectionHandler.SendData(lineData);
+                string tracingSpanLineData = Utils.TracingSpanToLineData(
+                    name, startMillis, durationMillis, source, traceId, spanId, parents,
+                    followsFrom, tags, spanLogs, defaultSource);
+                tracingProxyConnectionHandler.SendData(tracingSpanLineData);
+
+                if (spanLogsLineData != null)
+                {
+                    tracingProxyConnectionHandler.SendData(spanLogsLineData);
+                }
             }
             catch (Exception e)
             {

@@ -20,6 +20,8 @@
         /// </summary>
         public const string WavefrontTracingSpanFormat = "trace";
 
+        public const string WavefrontSpanLogsFormat = "spanLogs";
+
         /// <summary>
         /// ∆: INCREMENT
         /// </summary>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using Wavefront.SDK.CSharp.Common;
 using Wavefront.SDK.CSharp.Entities.Histograms;
+using Wavefront.SDK.CSharp.Entities.Tracing;
 using Xunit;
 
 namespace Wavefront.SDK.CSharp.Test
@@ -200,6 +201,62 @@ namespace Wavefront.SDK.CSharp.Test
                              new Guid("7b3bf470-9456-11e8-9eb6-529269fb1459"),
                              new Guid("0313bafe-9457-11e8-9eb6-529269fb1459"),
                              null, null, null, null, "defaultSource"));
+        }
+
+        [Fact]
+        public void TestSpanLogsToLineData()
+        {
+            var spanLogs = new List<SpanLog>();
+            spanLogs.Add(new SpanLog(1493773500123,
+                new Dictionary<string, string> { { "event", "error" }, { "event.kind", "exception" } }.ToImmutableDictionary()));
+            spanLogs.Add(new SpanLog(1493773500139,
+                new Dictionary<string, string> { { "info", "na" } }.ToImmutableDictionary()));
+
+            string actual = Utils.SpanLogsToLineData(
+                1493773500L, 343500L,
+                new Guid("7b3bf470-9456-11e8-9eb6-529269fb1459"),
+                new Guid("0313bafe-9457-11e8-9eb6-529269fb1459"),
+                spanLogs);
+
+            Assert.True(
+                actual.Equals("{" +
+                                  "\"traceId\":\"7b3bf470-9456-11e8-9eb6-529269fb1459\"," +
+                                  "\"spanId\":\"0313bafe-9457-11e8-9eb6-529269fb1459\"," +
+                                  "\"logs\":[" +
+                                    "{" +
+                                        "\"timestamp\":\"1493773500123\"," +
+                                        "\"fields\":{" +
+                                            "\"event\":\"error\"," +
+                                            "\"event.kind\":\"exception\"" +
+                                        "}" +
+                                    "}," +
+                                    "{" +
+                                        "\"timestamp\":\"1493773500139\"," +
+                                        "\"fields\":{" +
+                                            "\"info\":\"na\"" +
+                                        "}" +
+                                    "}" +
+                                  "]" +
+                              "}\n") ||
+                actual.Equals("{" +
+                                  "\"traceId\":\"7b3bf470-9456-11e8-9eb6-529269fb1459\"," +
+                                  "\"spanId\":\"0313bafe-9457-11e8-9eb6-529269fb1459\"," +
+                                  "\"logs\":[" +
+                                    "{" +
+                                        "\"timestamp\":\"1493773500123\"," +
+                                        "\"fields\":{" +
+                                            "\"event.kind\":\"exception\"," +
+                                            "\"event\":\"error\"" +
+                                        "}" +
+                                    "}," +
+                                    "{" +
+                                        "\"timestamp\":\"1493773500139\"," +
+                                        "\"fields\":{" +
+                                            "\"info\":\"na\"" +
+                                        "}" +
+                                    "}" +
+                                  "]" +
+                              "}\n"));
         }
     }
 }
