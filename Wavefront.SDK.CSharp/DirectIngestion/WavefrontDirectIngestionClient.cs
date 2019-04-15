@@ -28,6 +28,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
         private BlockingCollection<string> metricsBuffer;
         private BlockingCollection<string> histogramsBuffer;
         private BlockingCollection<string> tracingSpansBuffer;
+        private BlockingCollection<string> spanLogsBuffer;
         private IDataIngesterAPI directService;
         private System.Timers.Timer timer;
 
@@ -105,6 +106,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                     metricsBuffer = new BlockingCollection<string>(maxQueueSize),
                     histogramsBuffer = new BlockingCollection<string>(maxQueueSize),
                     tracingSpansBuffer = new BlockingCollection<string>(maxQueueSize),
+                    spanLogsBuffer = new BlockingCollection<string>(maxQueueSize),
                     directService = new DataIngesterService(server, token)
                 };
 
@@ -155,12 +157,34 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                              IList<Guid> followsFrom, IList<KeyValuePair<string, string>> tags,
                              IList<SpanLog> spanLogs)
         {
-            var lineData = Utils.TracingSpanToLineData(name, startMillis, durationMillis, source,
-                                                       traceId, spanId, parents, followsFrom,
-                                                       tags, spanLogs, DefaultSource);
-            if (!tracingSpansBuffer.TryAdd(lineData))
+            string spanLogsLineData = null;
+
+            if (spanLogs != null && spanLogs.Count > 0)
             {
-                Logger.LogTrace("Buffer full, dropping span: " + lineData);
+                if (tags == null)
+                {
+                    tags = new List<KeyValuePair<string, string>>();
+                }
+                Utils.AddSpanLogIndicatorTag(tags);
+
+                spanLogsLineData = Utils.SpanLogsToLineData(
+                    startMillis, durationMillis, traceId, spanId, spanLogs);
+            }
+
+            var tracingSpanLineData = Utils.TracingSpanToLineData(
+                name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom,
+                tags, spanLogs, DefaultSource);
+
+            if (tracingSpansBuffer.TryAdd(tracingSpanLineData))
+            {
+                if (spanLogsLineData != null && !spanLogsBuffer.TryAdd(spanLogsLineData))
+                {
+                    Logger.LogTrace("Buffer full, dropping span logs: " + spanLogsLineData);
+                }
+            }
+            else
+            {
+                Logger.LogTrace("Buffer full, dropping span: " + tracingSpanLineData);
             }
         }
 
@@ -182,6 +206,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             InternalFlush(metricsBuffer, Constants.WavefrontMetricFormat);
             InternalFlush(histogramsBuffer, Constants.WavefrontHistogramFormat);
             InternalFlush(tracingSpansBuffer, Constants.WavefrontTracingSpanFormat);
+            InternalFlush(spanLogsBuffer, Constants.WavefrontSpanLogsFormat);
         }
 
         private void InternalFlush(BlockingCollection<string> buffer, string format)

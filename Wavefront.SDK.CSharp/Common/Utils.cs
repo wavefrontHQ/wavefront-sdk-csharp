@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net;
+using System.Runtime.Serialization.Json;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using Wavefront.SDK.CSharp.Entities.Histograms;
 using Wavefront.SDK.CSharp.Entities.Tracing;
 
@@ -13,6 +17,8 @@ namespace Wavefront.SDK.CSharp.Common
     /// </summary>
     public static class Utils
     {
+        private static readonly ILogger Logger =
+            Logging.LoggerFactory.CreateLogger(typeof(Utils));
         private static readonly Regex WhitespaceRegex = new Regex("\\s+");
 
         /// <summary>
@@ -313,9 +319,91 @@ namespace Wavefront.SDK.CSharp.Common
             sb.Append(startMillis);
             sb.Append(' ');
             sb.Append(durationMillis);
-            // TODO - Support SpanLogs
             sb.Append('\n');
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Converts the span logs for a particular span to Wavefront data format.
+        /// </summary>
+        /// <returns>The span logs for a particular span in Wavefront data format.</returns>
+        /// <param name="startMillis">The start time in milliseconds for this span.</param>
+        /// <param name="durationMillis">The duration of the span in milliseconds.</param>
+        /// <param name="traceId">The unique trace ID for the span.</param>
+        /// <param name="spanId">The unique span ID for the span.</param>
+        /// <param name="spanLogs">The list of span logs for the span.</param>
+        public static string SpanLogsToLineData(long startMillis,
+                                                long durationMillis,
+                                                Guid traceId,
+                                                Guid spanId,
+                                                IList<SpanLog> spanLogs)
+        {
+            /*
+             * Wavefront Span Log Data format
+             * Example:
+             *  {            
+             *      "traceId": "7b3bf470-9456-11e8-9eb6-529269fb1459",
+             *      "spanId": "0313bafe-9457-11e8-9eb6-529269fb1459",
+             *      "logs": [
+             *          {
+             *              "timestamp": "1554363517965",
+             *              "fields": {
+             *                  "event": "error",
+             *                  "error.kind": "exception",
+             *                  "message": "timed out",
+             *                  "stack": "File \"example.py\", line 7, in \<module\>\ncaller()\nFile \"example.py\""
+             *              }
+             *          }
+             *      ]
+             *  }
+             */
+            if (spanLogs == null)
+            {
+                return null;
+            }
+
+            long startMicros = startMillis * 1000;
+            long endMicros = (startMillis + durationMillis) * 1000;
+
+            var validSpanLogs = new List<SpanLog>();
+            foreach (SpanLog spanLog in spanLogs)
+            {
+                if (spanLog.TimestampMicros < startMicros || spanLog.TimestampMicros > endMicros)
+                {
+                    Logger.LogTrace(
+                        "Dropping span log because timestamp falls outside of span duration");
+                }
+                else
+                {
+                    validSpanLogs.Add(spanLog);
+                }
+            }
+
+            if (validSpanLogs.Count == 0)
+            {
+                return null;
+            }
+
+            var spanLogsObject = new SpanLogs(traceId, spanId, validSpanLogs);
+            var stream = new MemoryStream();
+            var serializerSettings = new DataContractJsonSerializerSettings
+            {
+                UseSimpleDictionaryFormat = true
+            };
+            var serializer = new DataContractJsonSerializer(typeof(SpanLogs), serializerSettings);
+            try
+            {
+                serializer.WriteObject(stream, spanLogsObject);
+                byte[] json = stream.ToArray();
+                stream.Close();
+                return Encoding.UTF8.GetString(json, 0, json.Length) + "\n";
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning("Error serializing span logs to JSON", e);
+                return null;
+            }
+
         }
 
         /// <summary>
@@ -332,6 +420,15 @@ namespace Wavefront.SDK.CSharp.Common
             {
                 return "unknown";
             }
+        }
+
+        /// <summary>
+        ///     Add spanLogs=true tag to the given list of tags.
+        /// </summary>
+        /// <param name="tags">The list of tags.</param>
+        public static void AddSpanLogIndicatorTag(IList<KeyValuePair<string, string>> tags)
+        {
+            tags.Add(new KeyValuePair<string, string>("spanLogs", "true"));
         }
     }
 }
