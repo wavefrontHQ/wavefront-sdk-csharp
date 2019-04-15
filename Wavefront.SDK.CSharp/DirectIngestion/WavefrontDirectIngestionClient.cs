@@ -181,7 +181,8 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                 {
                     Logger.LogTrace("Buffer full, dropping span logs: " + spanLogsLineData);
                 }
-            } else
+            }
+            else
             {
                 Logger.LogTrace("Buffer full, dropping span: " + tracingSpanLineData);
             }

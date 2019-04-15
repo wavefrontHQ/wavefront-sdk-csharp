@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Net;
+using System.Runtime.Serialization.Json;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using Wavefront.SDK.CSharp.Entities.Histograms;
 using Wavefront.SDK.CSharp.Entities.Tracing;
 
@@ -13,6 +17,8 @@ namespace Wavefront.SDK.CSharp.Common
     /// </summary>
     public static class Utils
     {
+        private static readonly ILogger Logger =
+            Logging.LoggerFactory.CreateLogger(typeof(Utils));
         private static readonly Regex WhitespaceRegex = new Regex("\\s+");
 
         /// <summary>
@@ -317,6 +323,15 @@ namespace Wavefront.SDK.CSharp.Common
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Converts the span logs for a particular span to Wavefront data format.
+        /// </summary>
+        /// <returns>The span logs for a particular span in Wavefront data format.</returns>
+        /// <param name="startMillis">The start time in milliseconds for this span.</param>
+        /// <param name="durationMillis">The duration of the span in milliseconds.</param>
+        /// <param name="traceId">The unique trace ID for the span.</param>
+        /// <param name="spanId">The unique span ID for the span.</param>
+        /// <param name="spanLogs">The list of span logs for the span.</param>
         public static string SpanLogsToLineData(long startMillis,
                                                 long durationMillis,
                                                 Guid traceId,
@@ -342,56 +357,53 @@ namespace Wavefront.SDK.CSharp.Common
              *      ]
              *  }
              */
-            var sb = new StringBuilder();
-            sb.Append("{");
-            sb.Append("\"traceId\":");
-            sb.Append("\"" + traceId + "\",");
-            sb.Append("\"spanId\":");
-            sb.Append("\"" + spanId + "\",");
-            sb.Append("\"logs\":[");
-
-            bool hasValidSpanLog = false;
-            foreach (SpanLog spanLog in spanLogs)
-            {
-                if (spanLog.TimestampMicros < startMillis * 1000 ||
-                    spanLog.TimestampMicros > (startMillis + durationMillis) * 1000)
-                {
-                    continue;
-                }
-                if (hasValidSpanLog)
-                {
-                    sb.Append(",");
-                }
-                hasValidSpanLog = true;
-                sb.Append("{");
-                sb.Append("\"timestamp\":");
-                sb.Append("\"" + spanLog.TimestampMicros + "\",");
-                sb.Append("\"fields\":");
-                sb.Append("{");
-                string separator = "";
-                foreach (var field in spanLog.Fields)
-                {
-                    if (!string.IsNullOrEmpty(field.Key) && !string.IsNullOrEmpty(field.Value))
-                    {
-                        sb.Append(separator);
-                        sb.Append(Sanitize(field.Key) + ":");
-                        sb.Append(Sanitize(field.Value));
-                        separator = ",";
-                    }
-                }
-                sb.Append("}");
-                sb.Append("}");
-            }
-
-            if (!hasValidSpanLog)
+            if (spanLogs == null)
             {
                 return null;
             }
 
-            sb.Append("]");
-            sb.Append("}");
-            sb.Append('\n');
-            return sb.ToString();
+            long startMicros = startMillis * 1000;
+            long endMicros = (startMillis + durationMillis) * 1000;
+
+            var validSpanLogs = new List<SpanLog>();
+            foreach (SpanLog spanLog in spanLogs)
+            {
+                if (spanLog.TimestampMicros < startMicros || spanLog.TimestampMicros > endMicros)
+                {
+                    Logger.LogTrace(
+                        "Dropping span log because timestamp falls outside of span duration");
+                }
+                else
+                {
+                    validSpanLogs.Add(spanLog);
+                }
+            }
+
+            if (validSpanLogs.Count == 0)
+            {
+                return null;
+            }
+
+            var spanLogsObject = new SpanLogs(traceId, spanId, validSpanLogs);
+            var stream = new MemoryStream();
+            var serializerSettings = new DataContractJsonSerializerSettings
+            {
+                UseSimpleDictionaryFormat = true
+            };
+            var serializer = new DataContractJsonSerializer(typeof(SpanLogs), serializerSettings);
+            try
+            {
+                serializer.WriteObject(stream, spanLogsObject);
+                byte[] json = stream.ToArray();
+                stream.Close();
+                return Encoding.UTF8.GetString(json, 0, json.Length) + "\n";
+            }
+            catch (Exception e)
+            {
+                Logger.LogWarning("Error serializing span logs to JSON", e);
+                return null;
+            }
+
         }
 
         /// <summary>

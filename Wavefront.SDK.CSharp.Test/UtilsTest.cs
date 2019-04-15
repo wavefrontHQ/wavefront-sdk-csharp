@@ -208,9 +208,11 @@ namespace Wavefront.SDK.CSharp.Test
         {
             var spanLogs = new List<SpanLog>();
             spanLogs.Add(new SpanLog(1493773500123,
-                new Dictionary<string, string> { { "event", "error" }, { "event.kind", "exception" } }.ToImmutableDictionary()));
+                new Dictionary<string, string> { { "event", "error" }, { "event.kind", "\"exception\"" } }.ToImmutableDictionary()));
             spanLogs.Add(new SpanLog(1493773500139,
-                new Dictionary<string, string> { { "info", "na" } }.ToImmutableDictionary()));
+                new Dictionary<string, string> { { "info", "newline:\n" } }.ToImmutableDictionary()));
+            spanLogs.Add(new SpanLog(1494773500000,
+                new Dictionary<string, string> { { "info", "not in range" } }.ToImmutableDictionary()));
 
             string actual = Utils.SpanLogsToLineData(
                 1493773500L, 343500L,
@@ -224,16 +226,16 @@ namespace Wavefront.SDK.CSharp.Test
                                   "\"spanId\":\"0313bafe-9457-11e8-9eb6-529269fb1459\"," +
                                   "\"logs\":[" +
                                     "{" +
-                                        "\"timestamp\":\"1493773500123\"," +
+                                        "\"timestamp\":1493773500123," +
                                         "\"fields\":{" +
                                             "\"event\":\"error\"," +
-                                            "\"event.kind\":\"exception\"" +
+                                            "\"event.kind\":\"\\\"exception\\\"\"" +
                                         "}" +
                                     "}," +
                                     "{" +
-                                        "\"timestamp\":\"1493773500139\"," +
+                                        "\"timestamp\":1493773500139," +
                                         "\"fields\":{" +
-                                            "\"info\":\"na\"" +
+                                            "\"info\":\"newline:\\n\"" +
                                         "}" +
                                     "}" +
                                   "]" +
@@ -243,16 +245,16 @@ namespace Wavefront.SDK.CSharp.Test
                                   "\"spanId\":\"0313bafe-9457-11e8-9eb6-529269fb1459\"," +
                                   "\"logs\":[" +
                                     "{" +
-                                        "\"timestamp\":\"1493773500123\"," +
+                                        "\"timestamp\":1493773500123," +
                                         "\"fields\":{" +
-                                            "\"event.kind\":\"exception\"," +
+                                            "\"event.kind\":\"\\\"exception\\\"\"," +
                                             "\"event\":\"error\"" +
                                         "}" +
                                     "}," +
                                     "{" +
-                                        "\"timestamp\":\"1493773500139\"," +
+                                        "\"timestamp\":1493773500139," +
                                         "\"fields\":{" +
-                                            "\"info\":\"na\"" +
+                                            "\"info\":\"newline:\\n\"" +
                                         "}" +
                                     "}" +
                                   "]" +
