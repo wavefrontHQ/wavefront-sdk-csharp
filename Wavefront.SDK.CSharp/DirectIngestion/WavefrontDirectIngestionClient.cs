@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading;
 using System.Timers;
 using Microsoft.Extensions.Logging;
 using Wavefront.SDK.CSharp.Common;
+using Wavefront.SDK.CSharp.Common.Metrics;
 using Wavefront.SDK.CSharp.Entities.Histograms;
 using Wavefront.SDK.CSharp.Entities.Tracing;
 
@@ -23,14 +23,39 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
         private static readonly ILogger Logger =
             Logging.LoggerFactory.CreateLogger<WavefrontDirectIngestionClient>();
 
-        private volatile int failures = 0;
         private int batchSize;
         private BlockingCollection<string> metricsBuffer;
         private BlockingCollection<string> histogramsBuffer;
         private BlockingCollection<string> tracingSpansBuffer;
         private BlockingCollection<string> spanLogsBuffer;
         private IDataIngesterAPI directService;
-        private System.Timers.Timer timer;
+        private Timer timer;
+
+        private WavefrontSdkMetricsRegistry sdkMetricsRegistry;
+        
+        // Internal point metrics
+        private WavefrontSdkCounter pointsValid;
+        private WavefrontSdkCounter pointsInvalid;
+        private WavefrontSdkCounter pointsDropped;
+        private WavefrontSdkCounter pointReportErrors;
+
+        // Internal histogram metrics
+        private WavefrontSdkCounter histogramsValid;
+        private WavefrontSdkCounter histogramsInvalid;
+        private WavefrontSdkCounter histogramsDropped;
+        private WavefrontSdkCounter histogramReportErrors;
+
+        // Internal tracing span metrics
+        private WavefrontSdkCounter spansValid;
+        private WavefrontSdkCounter spansInvalid;
+        private WavefrontSdkCounter spansDropped;
+        private WavefrontSdkCounter spanReportErrors;
+
+        // Internal span log metrics
+        private WavefrontSdkCounter spanLogsValid;
+        private WavefrontSdkCounter spanLogsInvalid;
+        private WavefrontSdkCounter spanLogsDropped;
+        private WavefrontSdkCounter spanLogReportErrors;
 
         public class Builder
         {
@@ -110,9 +135,53 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                     directService = new DataIngesterService(server, token)
                 };
 
-                client.timer = new System.Timers.Timer(flushIntervalSeconds * 1000);
+                client.timer = new Timer(flushIntervalSeconds * 1000);
                 client.timer.Elapsed += client.Run;
                 client.timer.Enabled = true;
+
+                client.sdkMetricsRegistry = new WavefrontSdkMetricsRegistry.Builder(client)
+                    .Prefix(Constants.SdkMetricPrefix + ".core.sender.direct")
+                    .Build();
+
+                client.sdkMetricsRegistry.Gauge("points.queue.size",
+                    () => client.metricsBuffer.Count);
+                client.sdkMetricsRegistry.Gauge("points.queue.remaining_capacity",
+                    () => client.metricsBuffer.BoundedCapacity - client.metricsBuffer.Count);
+                client.pointsValid = client.sdkMetricsRegistry.Counter("points.valid");
+                client.pointsInvalid = client.sdkMetricsRegistry.Counter("points.invalid");
+                client.pointsDropped = client.sdkMetricsRegistry.Counter("points.dropped");
+                client.pointReportErrors =
+                    client.sdkMetricsRegistry.Counter("points.report.errors");
+
+                client.sdkMetricsRegistry.Gauge("histograms.queue.size",
+                    () => client.histogramsBuffer.Count);
+                client.sdkMetricsRegistry.Gauge("histograms.queue.remaining_capacity",
+                    () => client.histogramsBuffer.BoundedCapacity - client.histogramsBuffer.Count);
+                client.histogramsValid = client.sdkMetricsRegistry.Counter("histograms.valid");
+                client.histogramsInvalid = client.sdkMetricsRegistry.Counter("histograms.invalid");
+                client.histogramsDropped = client.sdkMetricsRegistry.Counter("histograms.dropped");
+                client.histogramReportErrors =
+                    client.sdkMetricsRegistry.Counter("histograms.report.errors");
+
+                client.sdkMetricsRegistry.Gauge("spans.queue.size",
+                    () => client.tracingSpansBuffer.Count);
+                client.sdkMetricsRegistry.Gauge("spans.queue.remaining_capacity",
+                    () => client.tracingSpansBuffer.BoundedCapacity - client.tracingSpansBuffer.Count);
+                client.spansValid = client.sdkMetricsRegistry.Counter("spans.valid");
+                client.spansInvalid = client.sdkMetricsRegistry.Counter("spans.invalid");
+                client.spansDropped = client.sdkMetricsRegistry.Counter("spans.dropped");
+                client.spanReportErrors =
+                    client.sdkMetricsRegistry.Counter("spans.report.errors");
+
+                client.sdkMetricsRegistry.Gauge("span_logs.queue.size",
+                    () => client.spanLogsBuffer.Count);
+                client.sdkMetricsRegistry.Gauge("span_logs.queue.remaining_capacity",
+                    () => client.spanLogsBuffer.BoundedCapacity - client.spanLogsBuffer.Count);
+                client.spanLogsValid = client.sdkMetricsRegistry.Counter("span_logs.valid");
+                client.spanLogsInvalid = client.sdkMetricsRegistry.Counter("span_logs.invalid");
+                client.spanLogsDropped = client.sdkMetricsRegistry.Counter("span_logs.dropped");
+                client.spanLogReportErrors =
+                    client.sdkMetricsRegistry.Counter("span_logs.report.errors");
 
                 return client;
             }
@@ -126,11 +195,23 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
         public void SendMetric(string name, double value, long? timestamp, string source,
                                IDictionary<string, string> tags)
         {
-            var lineData =
-                Utils.MetricToLineData(name, value, timestamp, source, tags, DefaultSource);
+            string lineData;
+            try
+            {
+                lineData = Utils.MetricToLineData(name, value, timestamp, source, tags,
+                    DefaultSource);
+                pointsValid.Inc();
+            }
+            catch (ArgumentException e)
+            {
+                pointsInvalid.Inc();
+                throw e;
+            }
+            
 
             if (!metricsBuffer.TryAdd(lineData))
             {
+                pointsDropped.Inc();
                 Logger.LogTrace("Buffer full, dropping metric point: " + lineData);
             }
         }
@@ -143,10 +224,22 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                                      string source,
                                      IDictionary<string, string> tags)
         {
-            var lineData = Utils.HistogramToLineData(name, centroids, histogramGranularities,
-                                                        timestamp, source, tags, DefaultSource);
+            string lineData;
+            try
+            {
+                lineData = Utils.HistogramToLineData(name, centroids, histogramGranularities,
+                    timestamp, source, tags, DefaultSource);
+                histogramsValid.Inc();
+            }
+            catch (ArgumentException e)
+            {
+                histogramsInvalid.Inc();
+                throw e;
+            }
+
             if (!histogramsBuffer.TryAdd(lineData))
             {
+                histogramsDropped.Inc();
                 Logger.LogTrace("Buffer full, dropping histograms: " + lineData);
             }
         }
@@ -158,33 +251,54 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                              IList<SpanLog> spanLogs)
         {
             string spanLogsLineData = null;
-
             if (spanLogs != null && spanLogs.Count > 0)
             {
-                if (tags == null)
-                {
-                    tags = new List<KeyValuePair<string, string>>();
-                }
-                Utils.AddSpanLogIndicatorTag(tags);
+                spanLogsLineData = Utils.SpanLogsToLineData(startMillis, durationMillis, traceId,
+                    spanId, spanLogs);
 
-                spanLogsLineData = Utils.SpanLogsToLineData(
-                    startMillis, durationMillis, traceId, spanId, spanLogs);
+                if (spanLogsLineData == null)
+                {
+                    spanLogsInvalid.Inc();
+                }
+                else
+                {
+                    spanLogsValid.Inc();
+                    // If valid span logs exist, add indicator tag to span
+                    tags = Utils.AddSpanLogIndicatorTag(tags);
+                }
             }
 
-            var tracingSpanLineData = Utils.TracingSpanToLineData(
-                name, startMillis, durationMillis, source, traceId, spanId, parents, followsFrom,
-                tags, spanLogs, DefaultSource);
+            string tracingSpanLineData;
+            try
+            {
+                tracingSpanLineData = Utils.TracingSpanToLineData(name, startMillis,
+                    durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs,
+                    DefaultSource);
+                spansValid.Inc();
+            }
+            catch (ArgumentException e)
+            {
+                spansInvalid.Inc();
+                throw e;
+            }
 
             if (tracingSpansBuffer.TryAdd(tracingSpanLineData))
             {
+                // Enqueue valid span logs for sending only if the span was successfully enqueued
                 if (spanLogsLineData != null && !spanLogsBuffer.TryAdd(spanLogsLineData))
                 {
+                    spanLogsDropped.Inc();
                     Logger.LogTrace("Buffer full, dropping span logs: " + spanLogsLineData);
                 }
             }
             else
             {
+                spansDropped.Inc();
                 Logger.LogTrace("Buffer full, dropping span: " + tracingSpanLineData);
+                if (spanLogsLineData != null)
+                {
+                    spanLogsDropped.Inc();
+                }
             }
         }
 
@@ -203,13 +317,18 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
         /// <see cref="IBufferFlusher.Flush" />
         public void Flush()
         {
-            InternalFlush(metricsBuffer, Constants.WavefrontMetricFormat);
-            InternalFlush(histogramsBuffer, Constants.WavefrontHistogramFormat);
-            InternalFlush(tracingSpansBuffer, Constants.WavefrontTracingSpanFormat);
-            InternalFlush(spanLogsBuffer, Constants.WavefrontSpanLogsFormat);
+            InternalFlush(metricsBuffer, Constants.WavefrontMetricFormat, "points",
+                pointsDropped, pointReportErrors);
+            InternalFlush(histogramsBuffer, Constants.WavefrontHistogramFormat, "histograms",
+                histogramsDropped, histogramReportErrors);
+            InternalFlush(tracingSpansBuffer, Constants.WavefrontTracingSpanFormat, "spans",
+                spansDropped, spanReportErrors);
+            InternalFlush(spanLogsBuffer, Constants.WavefrontSpanLogsFormat, "span_logs",
+                spanLogsDropped, spanLogReportErrors);
         }
 
-        private void InternalFlush(BlockingCollection<string> buffer, string format)
+        private void InternalFlush(BlockingCollection<string> buffer, string format,
+            string entityPrefix, WavefrontSdkCounter dropped, WavefrontSdkCounter reportErrors)
         {
             var batch = GetBatch(buffer);
             if (batch.Count == 0)
@@ -221,22 +340,31 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             {
                 using (var stream = BatchToStream(batch))
                 {
-                    var statusCode = directService.Report(format, stream);
+                    int statusCode = directService.Report(format, stream);
+                    sdkMetricsRegistry.Counter(entityPrefix + ".report." + statusCode).Inc();
                     if (statusCode >= 400 && statusCode < 600)
                     {
                         Logger.LogTrace("Error reporting points, respStatus=" + statusCode);
+                        int numAddedBackToBuffer = 0;
                         foreach (var item in batch)
                         {
-                            if (!buffer.TryAdd(item))
+                            if (buffer.TryAdd(item))
                             {
+                                numAddedBackToBuffer++;
+                            }
+                            else
+                            {
+                                dropped.Inc(batch.Count - numAddedBackToBuffer);
                                 Logger.LogTrace("Buffer full, dropping attempted points");
+                                return;
                             }
                         }
                     }
                 }
             }
             catch (IOException e) {
-                Interlocked.Increment(ref failures);
+                dropped.Inc(batch.Count);
+                reportErrors.Inc();
                 throw e;
             }
         }
@@ -266,7 +394,8 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
         /// <see cref="IBufferFlusher.GetFailureCount" />
         public int GetFailureCount()
         {
-            return failures;
+            return (int) (pointReportErrors.Count + histogramReportErrors.Count +
+                spanReportErrors.Count + spanLogReportErrors.Count);
         }
 
         /// <summary>
@@ -275,6 +404,8 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Close()
         {
+            sdkMetricsRegistry.Dispose();
+
             try
             {
                 Flush();
