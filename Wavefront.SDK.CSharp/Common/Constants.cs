@@ -16,10 +16,13 @@
         public const string WavefrontHistogramFormat = "histogram";
 
         /// <summary>
-        /// Use this format to send tracing data to Wavefront.
+        /// Use this format to send tracing spans to Wavefront.
         /// </summary>
         public const string WavefrontTracingSpanFormat = "trace";
 
+        /// <summary>
+        /// Use this format to send span logs to Wavefront.
+        /// </summary>
         public const string WavefrontSpanLogsFormat = "spanLogs";
 
         /// <summary>
@@ -77,5 +80,9 @@
         /// </summary>
         public const string ComponentTagKey = "component";
 
+        /// <summary>
+        /// Name prefix for internal diagnostic metrics for Wavefront SDKs.
+        /// </summary>
+        public const string SdkMetricPrefix = "~sdk.csharp";
     }
 }

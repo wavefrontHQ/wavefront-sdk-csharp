@@ -423,12 +423,18 @@ namespace Wavefront.SDK.CSharp.Common
         }
 
         /// <summary>
-        ///     Add spanLogs=true tag to the given list of tags.
+        ///     Copy the given list of tags and add a tag indicating spanLogs=true.
         /// </summary>
         /// <param name="tags">The list of tags.</param>
-        public static void AddSpanLogIndicatorTag(IList<KeyValuePair<string, string>> tags)
+        /// <returns>The new list of tags.</returns>
+        public static IList<KeyValuePair<string, string>> AddSpanLogIndicatorTag(
+            IList<KeyValuePair<string, string>> tags)
         {
-            tags.Add(new KeyValuePair<string, string>("spanLogs", "true"));
+            var updatedTags = tags == null ?
+                new List<KeyValuePair<string, string>>() :
+                new List<KeyValuePair<string, string>>(tags);
+            updatedTags.Add(new KeyValuePair<string, string>("spanLogs", "true"));
+            return updatedTags;
         }
     }
 }

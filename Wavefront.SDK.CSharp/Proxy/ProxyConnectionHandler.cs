@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Wavefront.SDK.CSharp.Common;
+using Wavefront.SDK.CSharp.Common.Metrics;
 
 namespace Wavefront.SDK.CSharp.Proxy
 {
@@ -14,11 +16,22 @@ namespace Wavefront.SDK.CSharp.Proxy
         private readonly int port;
         private volatile ReconnectingSocket reconnectingSocket;
 
-        protected internal ProxyConnectionHandler(string host, int port)
+        private readonly WavefrontSdkMetricsRegistry sdkMetricsRegistry;
+        private readonly string entityPrefix;
+        private readonly WavefrontSdkCounter errors;
+        private readonly WavefrontSdkCounter connectErrors;
+
+        protected internal ProxyConnectionHandler(string host, int port,
+            WavefrontSdkMetricsRegistry sdkMetricsRegistry, string entityPrefix)
         {
             this.host = host;
             this.port = port;
             reconnectingSocket = null;
+
+            this.sdkMetricsRegistry = sdkMetricsRegistry;
+            this.entityPrefix = string.IsNullOrWhiteSpace(entityPrefix) ? "" : entityPrefix + ".";
+            errors = this.sdkMetricsRegistry.Counter(this.entityPrefix + "errors");
+            connectErrors = this.sdkMetricsRegistry.Counter(this.entityPrefix + "connect.errors");
         }
 
         /// <summary>
@@ -33,10 +46,12 @@ namespace Wavefront.SDK.CSharp.Proxy
             }
             try
             {
-                reconnectingSocket = new ReconnectingSocket(host, port);
+                reconnectingSocket = new ReconnectingSocket(host, port, sdkMetricsRegistry,
+                    entityPrefix + "socket");
             }
             catch (Exception e)
             {
+                connectErrors.Inc();
                 throw new IOException(e.Message, e);
             }
         }
@@ -44,9 +59,9 @@ namespace Wavefront.SDK.CSharp.Proxy
         /// <see cref="IBufferFlusher.Flush" />
         public void Flush()
         {
-            if (reconnectingSocket != null)
+            if (IsConnected())
             {
-                reconnectingSocket.Flush();
+                _ = reconnectingSocket.FlushAsync();
             }
         }
 
@@ -62,7 +77,15 @@ namespace Wavefront.SDK.CSharp.Proxy
         /// <see cref="IBufferFlusher.GetFailureCount" />
         public int GetFailureCount()
         {
-            return reconnectingSocket != null ? reconnectingSocket.GetFailureCount() : 0;
+            return (int)errors.Count;
+        }
+
+        /// <summary>
+        /// Increments the failure count by one.
+        /// </summary>
+        public void IncrementFailureCount()
+        {
+            errors.Inc();
         }
 
         /// <summary>
@@ -71,7 +94,7 @@ namespace Wavefront.SDK.CSharp.Proxy
         [MethodImpl(MethodImplOptions.Synchronized)]
         public void Close()
         {
-            if (reconnectingSocket != null)
+            if (IsConnected())
             {
                 reconnectingSocket.Close();
                 reconnectingSocket = null;
@@ -82,9 +105,21 @@ namespace Wavefront.SDK.CSharp.Proxy
         /// Sends data to the Wavefront proxy.
         /// </summary>
         /// <param name="lineData">The data to be sent, in Wavefront data format.</param>
-        public void SendData(string lineData)
+        public async Task SendDataAsync(string lineData)
         {
-            reconnectingSocket.Write(lineData);
+            if (!IsConnected())
+            {
+                try
+                {
+                    Connect();
+                }
+                catch (InvalidOperationException)
+                {
+                    // already connected.
+                }
+            }
+
+            await reconnectingSocket.WriteAsync(lineData);
         }
     }
 }

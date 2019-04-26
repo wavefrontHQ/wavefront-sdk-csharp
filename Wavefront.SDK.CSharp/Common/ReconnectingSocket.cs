@@ -1,11 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Wavefront.SDK.CSharp.Common.Metrics;
 
 namespace Wavefront.SDK.CSharp.Common
 {
@@ -28,7 +28,13 @@ namespace Wavefront.SDK.CSharp.Common
         private volatile TcpClient client;
         private volatile Stream socketOutputStream;
         private volatile SemaphoreSlim connectSemaphore = new SemaphoreSlim(1);
-        private volatile int failures;
+
+        private readonly WavefrontSdkCounter writeSuccesses;
+        private readonly WavefrontSdkCounter writeErrors;
+        private readonly WavefrontSdkCounter flushSuccesses;
+        private readonly WavefrontSdkCounter flushErrors;
+        private readonly WavefrontSdkCounter resetSuccesses;
+        private readonly WavefrontSdkCounter resetErrors;
 
         /// <summary>
         /// Initializes a new instance of the
@@ -36,23 +42,25 @@ namespace Wavefront.SDK.CSharp.Common
         /// </summary>
         /// <param name="host">The hostname of the Wavefront proxy.</param>
         /// <param name="port">The port number of the Wavefront proxy to connect to.</param>
-        public ReconnectingSocket(string host, int port)
+        public ReconnectingSocket(string host, int port,
+            WavefrontSdkMetricsRegistry sdkMetricsRegistry, string entityPrefix)
         {
             this.host = host;
             this.port = port;
+
+            entityPrefix = string.IsNullOrWhiteSpace(entityPrefix) ? "" : entityPrefix + ".";
+            writeSuccesses = sdkMetricsRegistry.Counter(entityPrefix + "write.success");
+            writeErrors = sdkMetricsRegistry.Counter(entityPrefix + "write.errors");
+            flushSuccesses = sdkMetricsRegistry.Counter(entityPrefix + "flush.success");
+            flushErrors = sdkMetricsRegistry.Counter(entityPrefix + "flush.errors");
+            resetSuccesses = sdkMetricsRegistry.Counter(entityPrefix + "reset.success");
+            resetErrors = sdkMetricsRegistry.Counter(entityPrefix + "reset.errors");
+
             client = new TcpClient
             {
                 ReceiveTimeout = serverReadTimeoutMillis
             };
-            Connect();
-        }
-
-        /// <summary>
-        /// Blocks while attempting to establish a connection.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        private void Connect()
-        {
+            // Block while attempting to establish a connection
             ConnectAsync(false).GetAwaiter().GetResult();
         }
 
@@ -97,6 +105,10 @@ namespace Wavefront.SDK.CSharp.Common
                     {
                         socketOutputStream =
                             Stream.Synchronized(new BufferedStream(client.GetStream(), bufferSize));
+                        if (isReset)
+                        {
+                            resetSuccesses.Inc();
+                        }
                         Logger.LogInformation(
                                string.Format("Successfully connected to {0}:{1}", host, port));
                     }
@@ -108,8 +120,13 @@ namespace Wavefront.SDK.CSharp.Common
                 }
                 catch (Exception e)
                 {
+                    if (isReset)
+                    {
+                        resetErrors.Inc();
+                    }
                     Logger.LogWarning(string.Format("Unable to connect to {0}:{1}", host, port), e);
                     client.Close();
+                    throw new IOException(e.Message, e);
                 }
             }
             finally
@@ -121,10 +138,9 @@ namespace Wavefront.SDK.CSharp.Common
         /// <summary>
         /// Closes the outputStream best-effort. Tries to re-instantiate the outputStream.
         /// </summary>
-        [MethodImpl(MethodImplOptions.Synchronized)]
-        private void ResetSocket()
+        private async Task ResetSocketAsync()
         {
-            _ = ConnectAsync(true);
+            await ConnectAsync(true);
         }
 
         /// <summary>
@@ -132,71 +148,48 @@ namespace Wavefront.SDK.CSharp.Common
         /// If that fails, just rethrow the exception.
         /// </summary>
         /// <param name="message">The message to be sent to the Wavefront proxy.</param>
-        public void Write(string message)
-        {
-            _ = WriteAsync(message);
-        }
-
-        private async Task WriteAsync(string message)
+        public async Task WriteAsync(string message)
         {
             var bytes = Encoding.UTF8.GetBytes(message);
             try
             {
                 // Might be NPE due to previously failed call to ResetSocket.
                 await socketOutputStream.WriteAsync(bytes, 0, bytes.Length);
+                writeSuccesses.Inc();
             }
             catch (Exception e)
             {
                 try
                 {
                     Logger.LogWarning("Attempting to reset socket connection.", e);
-                    ResetSocket();
+                    await ResetSocketAsync();
                     await socketOutputStream.WriteAsync(bytes, 0, bytes.Length);
+                    writeSuccesses.Inc();
                 }
                 catch (Exception e2)
                 {
-                    Interlocked.Increment(ref failures);
+                    writeErrors.Inc();
                     throw new IOException(e2.Message, e2);
                 }
-
             }
         }
 
         /// <summary>
         /// Flushes the outputStream best-effort. If that fails, we reset the connection.
         /// </summary>
-        public void Flush()
-        {
-            _ = FlushAsync();
-        }
-
-        private async Task FlushAsync()
+        public async Task FlushAsync()
         {
             try
             {
                 await socketOutputStream.FlushAsync();
+                flushSuccesses.Inc();
             }
             catch (Exception e)
             {
-                try
-                {
-                    Logger.LogWarning("Attempting to reset socket connection.", e);
-                    ResetSocket();
-                }
-                catch (Exception e2)
-                {
-                    Logger.LogInformation("Could not flush data", e2);
-                }
+                flushErrors.Inc();
+                Logger.LogWarning("Attempting to reset socket connection.", e);
+                await ResetSocketAsync();
             }
-        }
-
-        /// <summary>
-        /// Returns the number of failed writes.
-        /// </summary>
-        /// <returns>The number of failed writes.</returns>
-        public int GetFailureCount()
-        {
-            return failures;
         }
 
         /// <summary>
