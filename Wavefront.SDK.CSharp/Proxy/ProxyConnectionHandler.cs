@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using Wavefront.SDK.CSharp.Common;
 using Wavefront.SDK.CSharp.Common.Metrics;
 
@@ -17,6 +18,7 @@ namespace Wavefront.SDK.CSharp.Proxy
 
         private readonly WavefrontSdkMetricsRegistry sdkMetricsRegistry;
         private readonly string entityPrefix;
+        private readonly WavefrontSdkCounter errors;
         private readonly WavefrontSdkCounter connectErrors;
 
         protected internal ProxyConnectionHandler(string host, int port,
@@ -28,8 +30,7 @@ namespace Wavefront.SDK.CSharp.Proxy
 
             this.sdkMetricsRegistry = sdkMetricsRegistry;
             this.entityPrefix = string.IsNullOrWhiteSpace(entityPrefix) ? "" : entityPrefix + ".";
-            this.sdkMetricsRegistry.Gauge(this.entityPrefix + "errors.count",
-                () => GetFailureCount());
+            errors = this.sdkMetricsRegistry.Counter(this.entityPrefix + "errors");
             connectErrors = this.sdkMetricsRegistry.Counter(this.entityPrefix + "connect.errors");
         }
 
@@ -60,7 +61,7 @@ namespace Wavefront.SDK.CSharp.Proxy
         {
             if (IsConnected())
             {
-                reconnectingSocket.Flush();
+                _ = reconnectingSocket.FlushAsync();
             }
         }
 
@@ -76,7 +77,15 @@ namespace Wavefront.SDK.CSharp.Proxy
         /// <see cref="IBufferFlusher.GetFailureCount" />
         public int GetFailureCount()
         {
-            return IsConnected() ? reconnectingSocket.GetFailureCount() : 0;
+            return (int)errors.Count;
+        }
+
+        /// <summary>
+        /// Increments the failure count by one.
+        /// </summary>
+        public void IncrementFailureCount()
+        {
+            errors.Inc();
         }
 
         /// <summary>
@@ -96,7 +105,7 @@ namespace Wavefront.SDK.CSharp.Proxy
         /// Sends data to the Wavefront proxy.
         /// </summary>
         /// <param name="lineData">The data to be sent, in Wavefront data format.</param>
-        public void SendData(string lineData)
+        public async Task SendDataAsync(string lineData)
         {
             if (!IsConnected())
             {
@@ -110,7 +119,7 @@ namespace Wavefront.SDK.CSharp.Proxy
                 }
             }
 
-            reconnectingSocket.Write(lineData);
+            await reconnectingSocket.WriteAsync(lineData);
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using System.Timers;
 using Microsoft.Extensions.Logging;
 using Wavefront.SDK.CSharp.Common;
@@ -133,7 +134,7 @@ namespace Wavefront.SDK.CSharp.Proxy
                 var client = new WavefrontProxyClient();
 
                 client.sdkMetricsRegistry = new WavefrontSdkMetricsRegistry.Builder(client)
-                    .Prefix(Constants.SdkMetricPrefix + ".core.sender.direct")
+                    .Prefix(Constants.SdkMetricPrefix + ".core.sender.proxy")
                     .Build();
 
                 if (metricsPort == null)
@@ -226,14 +227,12 @@ namespace Wavefront.SDK.CSharp.Proxy
                 throw e;
             }
 
-            try
-            {
-                metricsProxyConnectionHandler.SendData(lineData);
-            } catch (Exception e)
-            {
-                pointsDropped.Inc();
-                throw new IOException(e.Message, e);
-            }
+            _ = metricsProxyConnectionHandler.SendDataAsync(lineData).ContinueWith(
+                task =>
+                {
+                    pointsDropped.Inc();
+                    metricsProxyConnectionHandler.IncrementFailureCount();
+                }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         /// <see cref="IWavefrontHistogramSender.SendDistribution"/>
@@ -263,15 +262,12 @@ namespace Wavefront.SDK.CSharp.Proxy
                 throw e;
             }
 
-            try
-            {
-                histogramProxyConnectionHandler.SendData(lineData);
-            }
-            catch (Exception e)
-            {
-                histogramsDropped.Inc();
-                throw new IOException(e.Message, e);
-            }
+            _ = histogramProxyConnectionHandler.SendDataAsync(lineData).ContinueWith(
+                task =>
+                {
+                    histogramsDropped.Inc();
+                    histogramProxyConnectionHandler.IncrementFailureCount();
+                }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         /// <see cref="IWavefrontTracingSpanSender.SendSpan"/>
@@ -324,33 +320,32 @@ namespace Wavefront.SDK.CSharp.Proxy
                 throw e;
             }
 
-            try
-            {
-                tracingProxyConnectionHandler.SendData(tracingSpanLineData);
-            }
-            catch (Exception e)
-            {
-                spansDropped.Inc();
-                if (spanLogsLineData != null)
+            _ = tracingProxyConnectionHandler.SendDataAsync(tracingSpanLineData).ContinueWith(
+                task =>
                 {
-                    spanLogsDropped.Inc();
-                }
-                throw new IOException(e.Message, e);
-            }
-
-            // Send valid span logs only if the span was successfully sent
-            if (spanLogsLineData != null)
-            {
-                try
-                {
-                    tracingProxyConnectionHandler.SendData(spanLogsLineData);
-                }
-                catch (Exception e)
-                {
-                    spanLogsDropped.Inc();
-                    throw new IOException(e.Message, e);
-                }
-            }
+                    if (task.Exception == null)
+                    {
+                        // Send valid span logs only if the span was successfully sent
+                        if (spanLogsLineData != null)
+                        {
+                            _ = tracingProxyConnectionHandler.SendDataAsync(spanLogsLineData)
+                                .ContinueWith(task2 =>
+                                {
+                                    spanLogsDropped.Inc();
+                                    tracingProxyConnectionHandler.IncrementFailureCount();
+                                }, TaskContinuationOptions.OnlyOnFaulted);
+                        }
+                    }
+                    else
+                    {
+                        spansDropped.Inc();
+                        if (spanLogsLineData != null)
+                        {
+                            spanLogsDropped.Inc();
+                        }
+                        tracingProxyConnectionHandler.IncrementFailureCount();
+                    }
+                });
         }
 
         private void Run(object source, ElapsedEventArgs args)
