@@ -14,7 +14,7 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/wavefrontHQ/wavefront-sdk-csharp</RepositoryUrl>
     <PackageTags>Wavefront;VMware;monitoring;metrics;tracing</PackageTags>
-    <PackageReleaseNotes>https://github.com/wavefrontHQ/wavefront-sdk-csharp/releases/tag/v1.2.1</PackageReleaseNotes>
+    <PackageReleaseNotes>https://github.com/wavefrontHQ/wavefront-sdk-csharp/releases/tag/v1.3.0</PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Common\Application\" />
