@@ -81,9 +81,9 @@
         public const string ComponentTagKey = "component";
 
         /// <summary>
-        /// Tag key for defining a process.
+        /// Tag key for defining a process identifier.
         /// </summary>
-        public const string ProcessTagKey = "proc";
+        public const string ProcessTagKey = "pid";
 
         /// <summary>
         /// Name prefix for internal diagnostic metrics for Wavefront SDKs.
