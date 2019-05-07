@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Timers;
@@ -135,6 +136,7 @@ namespace Wavefront.SDK.CSharp.Proxy
 
                 client.sdkMetricsRegistry = new WavefrontSdkMetricsRegistry.Builder(client)
                     .Prefix(Constants.SdkMetricPrefix + ".core.sender.proxy")
+                    .Tag(Constants.ProcessTagKey, Process.GetCurrentProcess().Id.ToString())
                     .Build();
 
                 if (metricsPort == null)
@@ -356,27 +358,16 @@ namespace Wavefront.SDK.CSharp.Proxy
             }
             catch (Exception e)
             {
-                Logger.LogTrace("Unable to report to Wavefront cluster", e);
+                Logger.LogTrace(0, e, "Unable to report to Wavefront cluster");
             }
         }
 
         /// <see cref="IBufferFlusher.Flush" />
         public void Flush()
         {
-            if (metricsProxyConnectionHandler != null)
-            {
-                metricsProxyConnectionHandler.Flush();
-            }
-
-            if (histogramProxyConnectionHandler != null)
-            {
-                histogramProxyConnectionHandler.Flush();
-            }
-
-            if (tracingProxyConnectionHandler != null)
-            {
-                tracingProxyConnectionHandler.Flush();
-            }
+            metricsProxyConnectionHandler?.Flush();
+            histogramProxyConnectionHandler?.Flush();
+            tracingProxyConnectionHandler?.Flush();
         }
 
         /// <see cref="IBufferFlusher.GetFailureCount" />
@@ -414,45 +405,36 @@ namespace Wavefront.SDK.CSharp.Proxy
             }
             catch (IOException e)
             {
-                Logger.LogWarning("error flushing buffer", e);
+                Logger.LogWarning(0, e, "error flushing buffer");
             }
 
             timer.Dispose();
 
-            if (metricsProxyConnectionHandler != null)
+            try
             {
-                try
-                {
-                    metricsProxyConnectionHandler.Close();
-                }
-                catch (IOException e)
-                {
-                    Logger.LogWarning("error closing metricsProxyConnectionHandler", e);
-                }
+                metricsProxyConnectionHandler?.Close();
+            }
+            catch (IOException e)
+            {
+                Logger.LogWarning(0, e, "error closing metricsProxyConnectionHandler");
             }
 
-            if (histogramProxyConnectionHandler != null)
+            try
             {
-                try
-                {
-                    histogramProxyConnectionHandler.Close();
-                }
-                catch (IOException e)
-                {
-                    Logger.LogWarning("error closing histogramProxyConnectionHandler", e);
-                }
+                histogramProxyConnectionHandler.Close();
+            }
+            catch (IOException e)
+            {
+                Logger.LogWarning(0, e, "error closing histogramProxyConnectionHandler");
             }
 
-            if (tracingProxyConnectionHandler != null)
+            try
             {
-                try
-                {
-                    tracingProxyConnectionHandler.Close();
-                }
-                catch (IOException e)
-                {
-                    Logger.LogWarning("error closing tracingProxyConnectionHandler", e);
-                }
+                tracingProxyConnectionHandler.Close();
+            }
+            catch (IOException e)
+            {
+                Logger.LogWarning(0, e, "error closing tracingProxyConnectionHandler");
             }
         }
     }
