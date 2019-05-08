@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -141,6 +142,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
 
                 client.sdkMetricsRegistry = new WavefrontSdkMetricsRegistry.Builder(client)
                     .Prefix(Constants.SdkMetricPrefix + ".core.sender.direct")
+                    .Tag(Constants.ProcessTagKey, Process.GetCurrentProcess().Id.ToString())
                     .Build();
 
                 client.sdkMetricsRegistry.Gauge("points.queue.size",
@@ -310,7 +312,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             }
             catch (Exception e)
             {
-                Logger.LogTrace("Unable to report to Wavefront cluster", e);
+                Logger.LogTrace(0, e, "Unable to report to Wavefront cluster");
             }
         }
 
@@ -412,7 +414,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             }
             catch (IOException e)
             {
-                Logger.LogWarning("error flushing buffer", e);
+                Logger.LogWarning(0, e, "error flushing buffer");
             }
 
             timer.Dispose();

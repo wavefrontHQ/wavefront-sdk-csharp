@@ -28,9 +28,9 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
             private readonly IWavefrontMetricSender wavefrontMetricSender;
 
             // Optional parameters
+            private readonly IDictionary<string, string> tags;
             private int reportingIntervalSeconds = 60;
             private string source;
-            private IDictionary<string, string> tags;
             private string prefix;
 
             /// <summary>
@@ -42,6 +42,7 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
             public Builder(IWavefrontMetricSender wavefrontMetricSender)
             {
                 this.wavefrontMetricSender = wavefrontMetricSender;
+                tags = new Dictionary<string, string>();
             }
 
             /// <summary>
@@ -69,13 +70,34 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
             }
 
             /// <summary>
-            /// Sets the point tags associated with the registry's metrics.
+            /// Adds point tags associated with the registry's metrics.
             /// </summary>
             /// <param name="tags">The point tags associated with the registry's metrics.</param>
             /// <returns><see cref="this"/></returns>
             public Builder Tags(IDictionary<string, string> tags)
             {
-                this.tags = tags;
+                foreach (var tag in tags)
+                {
+                    if (tag.Key != null && !this.tags.ContainsKey(tag.Key))
+                    {
+                       this.tags.Add(tag.Key, tag.Value);
+                    }
+                }
+                return this;
+            }
+
+            /// <summary>
+            /// Adds a point tag associated with the registry's metrics.
+            /// </summary>
+            /// <param name="key">The tag key.</param>
+            /// <param name="value">The tag value.</param>
+            /// <returns><see cref="this"/></returns>
+            public Builder Tag(string key, string value)
+            {
+                if (key != null && !tags.ContainsKey(key))
+                {
+                    tags.Add(key, value);
+                }
                 return this;
             }
 
@@ -139,7 +161,7 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogWarning("Unable to send internal SDK metric", ex);
+                    Logger.LogWarning(0, ex, "Unable to send internal SDK metric");
                 }
             }
         }

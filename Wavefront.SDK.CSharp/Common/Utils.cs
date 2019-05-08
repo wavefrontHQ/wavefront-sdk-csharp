@@ -400,7 +400,7 @@ namespace Wavefront.SDK.CSharp.Common
             }
             catch (Exception e)
             {
-                Logger.LogWarning("Error serializing span logs to JSON", e);
+                Logger.LogWarning(0, e, "Error serializing span logs to JSON");
                 return null;
             }
 
