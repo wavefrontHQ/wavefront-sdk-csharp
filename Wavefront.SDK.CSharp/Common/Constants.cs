@@ -81,6 +81,11 @@
         public const string ComponentTagKey = "component";
 
         /// <summary>
+        /// Tag key for indicating span logs are present for a span.
+        /// </summary>
+        public const string SpanLogTagKey = "_spanLogs";
+
+        /// <summary>
         /// Tag key for defining a process identifier.
         /// </summary>
         public const string ProcessTagKey = "pid";
@@ -89,5 +94,7 @@
         /// Name prefix for internal diagnostic metrics for Wavefront SDKs.
         /// </summary>
         public const string SdkMetricPrefix = "~sdk.csharp";
+
+
     }
 }

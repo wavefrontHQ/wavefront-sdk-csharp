@@ -211,11 +211,8 @@ namespace Wavefront.SDK.CSharp.Test
                 new Dictionary<string, string> { { "event", "error" }, { "event.kind", "\"exception\"" } }.ToImmutableDictionary()));
             spanLogs.Add(new SpanLog(1493773500139,
                 new Dictionary<string, string> { { "info", "newline:\n" } }.ToImmutableDictionary()));
-            spanLogs.Add(new SpanLog(1494773500000,
-                new Dictionary<string, string> { { "info", "not in range" } }.ToImmutableDictionary()));
 
             string actual = Utils.SpanLogsToLineData(
-                1493773500L, 343500L,
                 new Guid("7b3bf470-9456-11e8-9eb6-529269fb1459"),
                 new Guid("0313bafe-9457-11e8-9eb6-529269fb1459"),
                 spanLogs);

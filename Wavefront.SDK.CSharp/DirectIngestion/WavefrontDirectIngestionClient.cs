@@ -214,7 +214,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             if (!metricsBuffer.TryAdd(lineData))
             {
                 pointsDropped.Inc();
-                Logger.LogTrace("Buffer full, dropping metric point: " + lineData);
+                Logger.LogWarning("Buffer full, dropping metric point: " + lineData);
             }
         }
 
@@ -242,7 +242,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             if (!histogramsBuffer.TryAdd(lineData))
             {
                 histogramsDropped.Inc();
-                Logger.LogTrace("Buffer full, dropping histograms: " + lineData);
+                Logger.LogWarning("Buffer full, dropping histograms: " + lineData);
             }
         }
 
@@ -252,28 +252,10 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                              IList<Guid> followsFrom, IList<KeyValuePair<string, string>> tags,
                              IList<SpanLog> spanLogs)
         {
-            string spanLogsLineData = null;
-            if (spanLogs != null && spanLogs.Count > 0)
-            {
-                spanLogsLineData = Utils.SpanLogsToLineData(startMillis, durationMillis, traceId,
-                    spanId, spanLogs);
-
-                if (spanLogsLineData == null)
-                {
-                    spanLogsInvalid.Inc();
-                }
-                else
-                {
-                    spanLogsValid.Inc();
-                    // If valid span logs exist, add indicator tag to span
-                    tags = Utils.AddSpanLogIndicatorTag(tags);
-                }
-            }
-
-            string tracingSpanLineData;
+            string lineData;
             try
             {
-                tracingSpanLineData = Utils.TracingSpanToLineData(name, startMillis,
+                lineData = Utils.TracingSpanToLineData(name, startMillis,
                     durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs,
                     DefaultSource);
                 spansValid.Inc();
@@ -284,23 +266,42 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                 throw e;
             }
 
-            if (tracingSpansBuffer.TryAdd(tracingSpanLineData))
+            if (tracingSpansBuffer.TryAdd(lineData))
             {
-                // Enqueue valid span logs for sending only if the span was successfully enqueued
-                if (spanLogsLineData != null && !spanLogsBuffer.TryAdd(spanLogsLineData))
+                // Enqueue span logs for sending only if the span was successfully enqueued
+                if (spanLogs != null && spanLogs.Count > 0)
                 {
-                    spanLogsDropped.Inc();
-                    Logger.LogTrace("Buffer full, dropping span logs: " + spanLogsLineData);
+                    SendSpanLogs(traceId, spanId, spanLogs);
                 }
             }
             else
             {
                 spansDropped.Inc();
-                Logger.LogTrace("Buffer full, dropping span: " + tracingSpanLineData);
-                if (spanLogsLineData != null)
+                if (spanLogs != null && spanLogs.Count > 0)
                 {
                     spanLogsDropped.Inc();
                 }
+                Logger.LogWarning("Buffer full, dropping span: " + lineData);
+            }
+        }
+
+        private void SendSpanLogs(Guid traceId, Guid spanId, IList<SpanLog> spanLogs)
+        {
+            try
+            {
+                string lineData = Utils.SpanLogsToLineData(traceId, spanId, spanLogs);
+                spanLogsValid.Inc();
+                if (!spanLogsBuffer.TryAdd(lineData))
+                {
+                    spanLogsDropped.Inc();
+                    Logger.LogWarning("Buffer full, dropping span logs: " + lineData);
+                }
+            }
+            catch (Exception)
+            {
+                spanLogsInvalid.Inc();
+                Logger.LogWarning($"Unable to serialize span logs to json: traceId:{traceId}" +
+                    $" spanId:{spanId} spanLogs:{spanLogs}");
             }
         }
 
@@ -312,7 +313,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             }
             catch (Exception e)
             {
-                Logger.LogTrace(0, e, "Unable to report to Wavefront cluster");
+                Logger.LogWarning(0, e, "Unable to report to Wavefront cluster");
             }
         }
 
@@ -346,7 +347,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                     sdkMetricsRegistry.Counter(entityPrefix + ".report." + statusCode).Inc();
                     if (statusCode >= 400 && statusCode < 600)
                     {
-                        Logger.LogTrace("Error reporting points, respStatus=" + statusCode);
+                        Logger.LogWarning("Error reporting points, respStatus=" + statusCode);
                         int numAddedBackToBuffer = 0;
                         foreach (var item in batch)
                         {
@@ -357,7 +358,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                             else
                             {
                                 dropped.Inc(batch.Count - numAddedBackToBuffer);
-                                Logger.LogTrace("Buffer full, dropping attempted points");
+                                Logger.LogWarning("Buffer full, dropping attempted points");
                                 return;
                             }
                         }
