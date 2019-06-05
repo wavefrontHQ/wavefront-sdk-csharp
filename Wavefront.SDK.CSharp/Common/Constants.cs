@@ -94,7 +94,5 @@
         /// Name prefix for internal diagnostic metrics for Wavefront SDKs.
         /// </summary>
         public const string SdkMetricPrefix = "~sdk.csharp";
-
-
     }
 }
