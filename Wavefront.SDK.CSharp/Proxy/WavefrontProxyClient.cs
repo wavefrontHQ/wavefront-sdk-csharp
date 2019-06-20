@@ -290,28 +290,10 @@ namespace Wavefront.SDK.CSharp.Proxy
                 return;
             }
 
-            string spanLogsLineData = null;
-            if (spanLogs != null && spanLogs.Count > 0)
-            {
-                spanLogsLineData = Utils.SpanLogsToLineData(startMillis, durationMillis, traceId,
-                    spanId, spanLogs);
-
-                if (spanLogsLineData == null)
-                {
-                    spanLogsInvalid.Inc();
-                }
-                else
-                {
-                    spanLogsValid.Inc();
-                    // If valid span logs exist, add indicator tag to span
-                    tags = Utils.AddSpanLogIndicatorTag(tags);
-                }
-            }
-
-            string tracingSpanLineData;
+            string lineData;
             try
             {
-                tracingSpanLineData = Utils.TracingSpanToLineData(name, startMillis,
+                lineData = Utils.TracingSpanToLineData(name, startMillis,
                     durationMillis, source, traceId, spanId, parents, followsFrom, tags, spanLogs,
                     defaultSource);
                 spansValid.Inc();
@@ -322,32 +304,48 @@ namespace Wavefront.SDK.CSharp.Proxy
                 throw e;
             }
 
-            _ = tracingProxyConnectionHandler.SendDataAsync(tracingSpanLineData).ContinueWith(
+            _ = tracingProxyConnectionHandler.SendDataAsync(lineData).ContinueWith(
                 task =>
                 {
                     if (task.Exception == null)
                     {
                         // Send valid span logs only if the span was successfully sent
-                        if (spanLogsLineData != null)
+                        if (spanLogs != null && spanLogs.Count > 0)
                         {
-                            _ = tracingProxyConnectionHandler.SendDataAsync(spanLogsLineData)
-                                .ContinueWith(task2 =>
-                                {
-                                    spanLogsDropped.Inc();
-                                    tracingProxyConnectionHandler.IncrementFailureCount();
-                                }, TaskContinuationOptions.OnlyOnFaulted);
+                            SendSpanLogs(traceId, spanId, spanLogs);
                         }
                     }
                     else
                     {
                         spansDropped.Inc();
-                        if (spanLogsLineData != null)
+                        if (spanLogs != null && spanLogs.Count > 0)
                         {
                             spanLogsDropped.Inc();
                         }
                         tracingProxyConnectionHandler.IncrementFailureCount();
                     }
                 });
+        }
+
+        private void SendSpanLogs(Guid traceId, Guid spanId, IList<SpanLog> spanLogs)
+        {
+            try
+            {
+                string lineData = Utils.SpanLogsToLineData(traceId, spanId, spanLogs);
+                spanLogsValid.Inc();
+                _ = tracingProxyConnectionHandler.SendDataAsync(lineData).ContinueWith(
+                    task =>
+                    {
+                        spanLogsDropped.Inc();
+                        tracingProxyConnectionHandler.IncrementFailureCount();
+                    }, TaskContinuationOptions.OnlyOnFaulted);
+            }
+            catch (Exception)
+            {
+                spanLogsInvalid.Inc();
+                Logger.LogWarning($"Unable to serialize span logs to json: traceId:{traceId}" +
+                    $" spanId:{spanId} spanLogs:{spanLogs}");
+            }
         }
 
         private void Run(object source, ElapsedEventArgs args)
@@ -358,7 +356,7 @@ namespace Wavefront.SDK.CSharp.Proxy
             }
             catch (Exception e)
             {
-                Logger.LogTrace(0, e, "Unable to report to Wavefront cluster");
+                Logger.LogWarning(0, e, "Unable to report to Wavefront cluster");
             }
         }
 

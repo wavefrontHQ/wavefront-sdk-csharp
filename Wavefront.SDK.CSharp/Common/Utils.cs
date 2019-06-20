@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Runtime.Serialization.Json;
 using System.Text;
@@ -315,6 +314,13 @@ namespace Wavefront.SDK.CSharp.Common
                     sb.Append(Sanitize(tag.Value));
                 }
             }
+            if (spanLogs != null && spanLogs.Count > 0)
+            {
+                sb.Append(' ');
+                sb.Append(Sanitize(Constants.SpanLogTagKey));
+                sb.Append('=');
+                sb.Append(Sanitize("true"));
+            }
             sb.Append(' ');
             sb.Append(startMillis);
             sb.Append(' ');
@@ -327,14 +333,10 @@ namespace Wavefront.SDK.CSharp.Common
         /// Converts the span logs for a particular span to Wavefront data format.
         /// </summary>
         /// <returns>The span logs for a particular span in Wavefront data format.</returns>
-        /// <param name="startMillis">The start time in milliseconds for this span.</param>
-        /// <param name="durationMillis">The duration of the span in milliseconds.</param>
         /// <param name="traceId">The unique trace ID for the span.</param>
         /// <param name="spanId">The unique span ID for the span.</param>
         /// <param name="spanLogs">The list of span logs for the span.</param>
-        public static string SpanLogsToLineData(long startMillis,
-                                                long durationMillis,
-                                                Guid traceId,
+        public static string SpanLogsToLineData(Guid traceId,
                                                 Guid spanId,
                                                 IList<SpanLog> spanLogs)
         {
@@ -357,53 +359,17 @@ namespace Wavefront.SDK.CSharp.Common
              *      ]
              *  }
              */
-            if (spanLogs == null)
-            {
-                return null;
-            }
-
-            long startMicros = startMillis * 1000;
-            long endMicros = (startMillis + durationMillis) * 1000;
-
-            var validSpanLogs = new List<SpanLog>();
-            foreach (SpanLog spanLog in spanLogs)
-            {
-                if (spanLog.TimestampMicros < startMicros || spanLog.TimestampMicros > endMicros)
-                {
-                    Logger.LogTrace(
-                        "Dropping span log because timestamp falls outside of span duration");
-                }
-                else
-                {
-                    validSpanLogs.Add(spanLog);
-                }
-            }
-
-            if (validSpanLogs.Count == 0)
-            {
-                return null;
-            }
-
-            var spanLogsObject = new SpanLogs(traceId, spanId, validSpanLogs);
+            var spanLogsObject = new SpanLogs(traceId, spanId, spanLogs);
             var stream = new MemoryStream();
             var serializerSettings = new DataContractJsonSerializerSettings
             {
                 UseSimpleDictionaryFormat = true
             };
             var serializer = new DataContractJsonSerializer(typeof(SpanLogs), serializerSettings);
-            try
-            {
-                serializer.WriteObject(stream, spanLogsObject);
-                byte[] json = stream.ToArray();
-                stream.Close();
-                return Encoding.UTF8.GetString(json, 0, json.Length) + "\n";
-            }
-            catch (Exception e)
-            {
-                Logger.LogWarning(0, e, "Error serializing span logs to JSON");
-                return null;
-            }
-
+            serializer.WriteObject(stream, spanLogsObject);
+            byte[] json = stream.ToArray();
+            stream.Close();
+            return Encoding.UTF8.GetString(json, 0, json.Length) + "\n";
         }
 
         /// <summary>
@@ -420,21 +386,6 @@ namespace Wavefront.SDK.CSharp.Common
             {
                 return "unknown";
             }
-        }
-
-        /// <summary>
-        ///     Copy the given list of tags and add a tag indicating spanLogs=true.
-        /// </summary>
-        /// <param name="tags">The list of tags.</param>
-        /// <returns>The new list of tags.</returns>
-        public static IList<KeyValuePair<string, string>> AddSpanLogIndicatorTag(
-            IList<KeyValuePair<string, string>> tags)
-        {
-            var updatedTags = tags == null ?
-                new List<KeyValuePair<string, string>>() :
-                new List<KeyValuePair<string, string>>(tags);
-            updatedTags.Add(new KeyValuePair<string, string>("spanLogs", "true"));
-            return updatedTags;
         }
     }
 }
