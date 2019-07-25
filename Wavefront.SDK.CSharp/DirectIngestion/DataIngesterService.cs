@@ -2,6 +2,7 @@
 using System.IO;
 using System.IO.Compression;
 using System.Net;
+using Wavefront.SDK.CSharp.Common;
 
 namespace Wavefront.SDK.CSharp.DirectIngestion
 {
@@ -51,6 +52,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                 request.Headers.Add(HttpRequestHeader.Authorization, "Bearer " + token);
                 request.Timeout = ConnectTimeout;
                 request.ReadWriteTimeout = ReadTimeout;
+                request.Headers[Constants.WavefrontIgnoreHeader] = "true";
 
                 using (var outputStream = request.GetRequestStream())
                 {
