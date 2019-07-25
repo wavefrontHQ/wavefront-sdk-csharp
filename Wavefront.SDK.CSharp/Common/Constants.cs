@@ -94,5 +94,11 @@
         /// Name prefix for internal diagnostic metrics for Wavefront SDKs.
         /// </summary>
         public const string SdkMetricPrefix = "~sdk.csharp";
+
+        /// <summary>
+        /// Name of the HTTP header indicating that the request should be ignored
+        /// by Wavefront instrumentation.
+        /// </summary>
+        public const string WavefrontIgnoreHeader = "X-WF-IGNORE";
     }
 }
