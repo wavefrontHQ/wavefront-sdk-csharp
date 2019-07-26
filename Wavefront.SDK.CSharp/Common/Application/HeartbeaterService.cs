@@ -57,14 +57,25 @@ namespace Wavefront.SDK.CSharp.Common.Application
             heartbeatMetricTagsList = new List<IDictionary<string, string>>();
             foreach (string component in components)
             {
-                heartbeatMetricTagsList.Add(new Dictionary<string, string>
+                var tags = new Dictionary<string, string>
                 {
                     { Constants.ApplicationTagKey, applicationTags.Application },
                     { Constants.ClusterTagKey, applicationTags.Cluster ?? Constants.NullTagValue },
                     { Constants.ServiceTagKey, applicationTags.Service },
                     { Constants.ShardTagKey, applicationTags.Shard ?? Constants.NullTagValue },
                     { Constants.ComponentTagKey, component }
-                });
+                };
+                if (applicationTags.CustomTags != null)
+                {
+                    foreach (var customTag in applicationTags.CustomTags)
+                    {
+                        if (!tags.ContainsKey(customTag.Key))
+                        {
+                            tags.Add(customTag.Key, customTag.Value);
+                        }
+                    }
+                }
+                heartbeatMetricTagsList.Add(tags);
             }
         }
 
