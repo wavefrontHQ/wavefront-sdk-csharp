@@ -26,6 +26,7 @@ namespace Wavefront.SDK.CSharp.Entities.Metrics
         /// </param>
         /// <param name="value">
         /// The delta value to be sent. This will be aggregated on the Wavefront server side.
+        /// Non-positive delta values are ignored.
         /// </param>
         /// <param name="source">
         /// The source (or host) that's sending the metric. If null then assigned by Wavefront.
@@ -35,6 +36,12 @@ namespace Wavefront.SDK.CSharp.Entities.Metrics
                                             string name, double value, string source,
                                             IDictionary<string, string> tags)
         {
+            if (value <= 0)
+            {
+                // Delta counters cannot be non-positive
+                return;
+            }
+
             if (!name.StartsWith(Constants.DeltaPrefix, StringComparison.Ordinal) &&
                 !name.StartsWith(Constants.DeltaPrefix2, StringComparison.Ordinal))
             {
