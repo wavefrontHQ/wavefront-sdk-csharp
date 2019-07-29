@@ -16,11 +16,25 @@ namespace Wavefront.SDK.CSharp.Test
         [Fact]
         public void TestSanitize()
         {
-            Assert.Equal(@"""hello""", Utils.Sanitize("hello"));
-            Assert.Equal(@"""hello-world""", Utils.Sanitize("hello world"));
-            Assert.Equal(@"""hello.world""", Utils.Sanitize("hello.world"));
-            Assert.Equal(@"""hello\""world\""""", Utils.Sanitize("hello\"world\""));
-            Assert.Equal(@"""hello'world""", Utils.Sanitize("hello'world"));
+            Assert.Equal("\"hello\"", Utils.Sanitize("hello"));
+            Assert.Equal("\"hello-world\"", Utils.Sanitize("hello world"));
+            Assert.Equal("\"hello.world\"", Utils.Sanitize("hello.world"));
+            Assert.Equal("\"hello-world-\"", Utils.Sanitize("hello\"world\""));
+            Assert.Equal("\"hello-world\"", Utils.Sanitize("hello'world"));
+            Assert.Equal("\"~component.heartbeat\"", Utils.Sanitize("~component.heartbeat"));
+            Assert.Equal("\"-component.heartbeat\"", Utils.Sanitize("!component.heartbeat"));
+            Assert.Equal("\"Δcomponent.heartbeat\"", Utils.Sanitize("Δcomponent.heartbeat"));
+            Assert.Equal("\"∆component.heartbeat\"", Utils.Sanitize("∆component.heartbeat"));
+        }
+
+        [Fact]
+        public void TestSanitizeTagValue()
+        {
+            Assert.Equal("\"hello\"", Utils.SanitizeTagValue("hello"));
+            Assert.Equal("\"hello world\"", Utils.SanitizeTagValue("hello world"));
+            Assert.Equal("\"hello.world\"", Utils.SanitizeTagValue("hello.world"));
+            Assert.Equal("\"hello\\\"world\\\"\"", Utils.SanitizeTagValue("hello\"world\""));
+            Assert.Equal("\"hello'world\"", Utils.SanitizeTagValue("hello'world"));
         }
 
         [Fact]
@@ -31,14 +45,14 @@ namespace Wavefront.SDK.CSharp.Test
                 "\"datacenter\"=\"dc1\"\n",
                 Utils.MetricToLineData(
                     "new-york.power.usage", 42422, 1493773500L, "localhost",
-                    new Dictionary<string, string>{ { "datacenter", "dc1"} }.ToImmutableDictionary(),
+                    new Dictionary<string, string> { { "datacenter", "dc1" } }.ToImmutableDictionary(),
                     "defaultSource"));
             // null timestamp
             Assert.Equal(
                 "\"new-york.power.usage\" 42422 source=\"localhost\" \"datacenter\"=\"dc1\"\n",
                 Utils.MetricToLineData(
                     "new-york.power.usage", 42422, null, "localhost",
-                    new Dictionary<string, string>{ { "datacenter", "dc1"} }.ToImmutableDictionary(),
+                    new Dictionary<string, string> { { "datacenter", "dc1" } }.ToImmutableDictionary(),
                     "defaultSource"));
             // null tags
             Assert.Equal(
@@ -50,6 +64,13 @@ namespace Wavefront.SDK.CSharp.Test
                 "\"new-york.power.usage\" 42422 source=\"localhost\"\n",
                 Utils.MetricToLineData("new-york.power.usage", 42422, null, "localhost", null,
                                        "defaultSource"));
+            // invalid char in metric name, source, and tag key. whitespace in tag value
+            Assert.Equal(
+                "\"new-york.power.usage\" 42422 1493773500 source=\"local-host\" \"-key-name-1\"=\"val name 1\"\n",
+                Utils.MetricToLineData(
+                    "new~york.power.usage", 42422, 1493773500L, "local~host",
+                    new Dictionary<string, string> { { " key name~1", " val name 1 " } }.ToImmutableDictionary(),
+                    "defaultSource"));
         }
 
         [Fact]

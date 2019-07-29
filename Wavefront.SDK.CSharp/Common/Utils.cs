@@ -4,7 +4,6 @@ using System.IO;
 using System.Net;
 using System.Runtime.Serialization.Json;
 using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Wavefront.SDK.CSharp.Entities.Histograms;
 using Wavefront.SDK.CSharp.Entities.Tracing;
@@ -18,25 +17,53 @@ namespace Wavefront.SDK.CSharp.Common
     {
         private static readonly ILogger Logger =
             Logging.LoggerFactory.CreateLogger(typeof(Utils));
-        private static readonly Regex WhitespaceRegex = new Regex("\\s+");
 
         /// <summary>
-        /// Sanitizes a string to be a valid Wavefront metric name, source, or tag.
+        /// Sanitizes a string to be a valid Wavefront metric name, source, or tag key.
         /// </summary>
         /// <returns>The sanitized string.</returns>
         /// <param name="s">The string to be sanitized.</param>
         public static string Sanitize(string s)
         {
-            var whitespaceSanitized = WhitespaceRegex.Replace(s, "-");
+            var sb = new StringBuilder();
+            sb.Append('"');
+            for (int i = 0; i < s.Length; i++)
+            {
+                char c = s[i];
+                bool isLegal = true;
+                // Legal characters are 44-57 (,-./ and numbers), 65-90 (upper), 97-122 (lower), 95 (_)
+                if (!(44 <= c && c <= 57) && !(65 <= c && c <= 90) && !(97 <= c && c <= 122) &&
+                    c != 95)
+                {
+                    if (!(i == 0 && (c == 0x2206 || c == 0x0394 || c == 126)))
+                    {
+                        // First character can also be \u2206 (∆ - INCREMENT)
+                        // or \u0394 (Δ - GREEK CAPITAL LETTER DELTA)
+                        // or ~ tilda character for internal metrics
+                        isLegal = false;
+                    }
+                }
+                sb.Append(isLegal ? c : '-');
+            }
+            return sb.Append('"').ToString();
+        }
+
+        /// <summary>
+        /// Sanitizes a string to be a valid Wavefront tag value.
+        /// </summary>
+        /// <returns>The sanitized string.</returns>
+        /// <param name="s">The string to be sanitized.</param>
+        public static string SanitizeTagValue(string s)
+        {
             if (s.Contains("\"") || s.Contains("'"))
             {
                 // for single quotes, once we are double-quoted, single quotes can exist happily
                 // inside it.
-                return "\"" + whitespaceSanitized.Replace("\"", "\\\"") + "\"";
+                return "\"" + s.Trim().Replace("\"", "\\\"") + "\"";
             }
             else
             {
-                return "\"" + whitespaceSanitized + "\"";
+                return "\"" + s.Trim() + "\"";
             }
         }
 
@@ -101,7 +128,7 @@ namespace Wavefront.SDK.CSharp.Common
                     sb.Append(' ');
                     sb.Append(Sanitize(tag.Key));
                     sb.Append('=');
-                    sb.Append(Sanitize(tag.Value));
+                    sb.Append(SanitizeTagValue(tag.Value));
                 }
             }
             sb.Append('\n');
@@ -208,7 +235,7 @@ namespace Wavefront.SDK.CSharp.Common
                         sb.Append(' ');
                         sb.Append(Sanitize(tag.Key));
                         sb.Append('=');
-                        sb.Append(Sanitize(tag.Value));
+                        sb.Append(SanitizeTagValue(tag.Value));
                     }
                 }
                 sb.Append('\n');
@@ -311,7 +338,7 @@ namespace Wavefront.SDK.CSharp.Common
                     sb.Append(' ');
                     sb.Append(Sanitize(tag.Key));
                     sb.Append('=');
-                    sb.Append(Sanitize(tag.Value));
+                    sb.Append(SanitizeTagValue(tag.Value));
                 }
             }
             if (spanLogs != null && spanLogs.Count > 0)
