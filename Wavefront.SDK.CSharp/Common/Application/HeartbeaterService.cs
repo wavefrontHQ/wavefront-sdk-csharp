@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using Microsoft.Extensions.Logging;
@@ -17,6 +18,7 @@ namespace Wavefront.SDK.CSharp.Common.Application
         private readonly IWavefrontMetricSender wavefrontMetricSender;
         private readonly IList<IDictionary<string, string>> heartbeatMetricTagsList;
         private readonly string source;
+        private readonly ConcurrentDictionary<IDictionary<string, string>, bool> customTagsSet;
         private Timer timer;
 
         /// <summary>
@@ -55,6 +57,7 @@ namespace Wavefront.SDK.CSharp.Common.Application
             this.wavefrontMetricSender = wavefrontMetricSender;
             this.source = source;
             heartbeatMetricTagsList = new List<IDictionary<string, string>>();
+            customTagsSet = new ConcurrentDictionary<IDictionary<string, string>, bool>(new TagsDictionaryComparer());
             foreach (string component in components)
             {
                 var tags = new Dictionary<string, string>
@@ -80,7 +83,17 @@ namespace Wavefront.SDK.CSharp.Common.Application
         }
 
         /// <summary>
-        /// Start sending hearbeats once every 5 minutes, with an initial delay of 1 minute.
+        /// Add custom tags such that the subsequent invocation of the heartbeater sends a heartbeat
+        /// metric that includes the custom tags.
+        /// </summary>
+        /// <param name="customTags">The custom tags to report with the next heartbeat.</param>
+        public void ReportCustomTags(IDictionary<string, string> customTags)
+        {
+            customTagsSet.TryAdd(customTags, true);
+        }
+
+        /// <summary>
+        /// Start sending heartbeats once every 5 minutes, with an initial delay of 1 minute.
         /// </summary>
         public void Start()
         {
@@ -90,6 +103,21 @@ namespace Wavefront.SDK.CSharp.Common.Application
 
         private void SendHeartbeat(object state)
         {
+            foreach (var entry in customTagsSet)
+            {
+                try
+                {
+                    wavefrontMetricSender.SendMetric(Constants.HeartbeatMetric, 1.0,
+                                                     DateTimeUtils.UnixTimeMilliseconds(DateTime.UtcNow),
+                                                     source, entry.Key);
+                    customTagsSet.TryRemove(entry.Key, out _);
+                }
+                catch (Exception)
+                {
+                    Logger.LogWarning($"Cannot report custom {Constants.HeartbeatMetric} to Wavefront");
+                }
+            }
+
             foreach (var heartbeatMetricTags in heartbeatMetricTagsList)
             {
                 try
