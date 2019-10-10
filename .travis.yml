@@ -1,7 +1,7 @@
 language: csharp
 solution: Wavefront.SDK.CSharp.sln
 mono: none
-dist: xenial
+dist: bionic
 dotnet: 2.2
 
 install:
