@@ -1,6 +1,7 @@
 language: csharp
 solution: Wavefront.SDK.CSharp.sln
 mono: none
+dist: xenial
 dotnet: 2.2.108
 
 install:
