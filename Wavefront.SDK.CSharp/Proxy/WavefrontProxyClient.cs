@@ -63,6 +63,7 @@ namespace Wavefront.SDK.CSharp.Proxy
             private int? distributionPort;
             private int? tracingPort;
             private int flushIntervalSeconds = 5;
+            private bool enableInternalMetrics = true;
 
             /// <summary>
             /// Creates a new
@@ -127,6 +128,16 @@ namespace Wavefront.SDK.CSharp.Proxy
             }
 
             /// <summary>
+            /// Disables the sending of internal SDK metrics.
+            /// </summary>
+            /// <returns><see cref="this"/></returns>
+            public Builder DisableInternalMetrics()
+            {
+                enableInternalMetrics = false;
+                return this;
+            }
+
+            /// <summary>
             /// Builds a new client that connects to the Wavefront Proxy Agent.
             /// </summary>
             /// <returns>A new <see cref="WavefrontProxyClient"/>.</returns>
@@ -134,10 +145,20 @@ namespace Wavefront.SDK.CSharp.Proxy
             {
                 var client = new WavefrontProxyClient();
 
-                client.sdkMetricsRegistry = new WavefrontSdkMetricsRegistry.Builder(client)
-                    .Prefix(Constants.SdkMetricPrefix + ".core.sender.proxy")
-                    .Tag(Constants.ProcessTagKey, Process.GetCurrentProcess().Id.ToString())
-                    .Build();
+                if (enableInternalMetrics)
+                {
+                    client.sdkMetricsRegistry = new WavefrontSdkMetricsRegistry.Builder(client)
+                        .Prefix(Constants.SdkMetricPrefix + ".core.sender.proxy")
+                        .Tag(Constants.ProcessTagKey, Process.GetCurrentProcess().Id.ToString())
+                        .Build();
+                }
+                else
+                {
+                    client.sdkMetricsRegistry = new WavefrontSdkMetricsRegistry.Builder(null)
+                        .Prefix(Constants.SdkMetricPrefix + ".core.sender.proxy")
+                        .Tag(Constants.ProcessTagKey, Process.GetCurrentProcess().Id.ToString())
+                        .Build();
+                }
 
                 if (metricsPort == null)
                 {

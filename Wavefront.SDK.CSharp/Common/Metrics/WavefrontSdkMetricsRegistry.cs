@@ -150,12 +150,12 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
                 {
                     if (metric is WavefrontSdkGauge)
                     {
-                        wavefrontMetricSender.SendMetric(name,
+                        wavefrontMetricSender?.SendMetric(name,
                             ((WavefrontSdkGauge)metric).Value, timestamp, source, tags);
                     }
                     else if (metric is WavefrontSdkCounter)
                     {
-                        wavefrontMetricSender.SendMetric(name + ".count",
+                        wavefrontMetricSender?.SendMetric(name + ".count",
                             ((WavefrontSdkCounter)metric).Count, timestamp, source, tags);
                     }
                 }
