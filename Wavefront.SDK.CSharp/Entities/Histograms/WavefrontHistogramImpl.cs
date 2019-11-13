@@ -339,10 +339,22 @@ namespace Wavefront.SDK.CSharp.Entities.Histograms
             public int Size => distribution.CentroidCount;
 
             /// <summary>
-            /// Not supported, so NaN is returned.
+            /// The standard deviation of the values in the distribution.
             /// </summary>
-            /// <value>NaN</value>
-            public double StdDev => Double.NaN;
+            /// <value>The standard deviation of distribution values.</value>
+            public double StdDev
+            {
+                get
+                {
+                    double varianceSum = distribution.GetDistribution().Select(centroid =>
+                    {
+                        double diff = centroid.Value - Mean;
+                        return diff * diff * centroid.Count;
+                    }).Sum();
+                    double variance = Count == 0 ? 0 : varianceSum / distribution.Count;
+                    return Math.Sqrt(variance);
+                }
+            }
 
             /// <summary>
             /// The sum of all the values in the distribution.
