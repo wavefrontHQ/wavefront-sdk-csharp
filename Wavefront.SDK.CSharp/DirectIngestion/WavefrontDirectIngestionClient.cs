@@ -68,6 +68,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             private int maxQueueSize = 50000;
             private int batchSize = 10000;
             private int flushIntervalSeconds = 1;
+            private bool enableInternalMetrics = true;
 
             /// <summary>
             /// Creates a new
@@ -121,6 +122,16 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             }
 
             /// <summary>
+            /// Disables the sending of internal SDK metrics.
+            /// </summary>
+            /// <returns><see cref="this"/></returns>
+            public Builder DisableInternalMetrics()
+            {
+                enableInternalMetrics = false;
+                return this;
+            }
+
+            /// <summary>
             /// Creates a new client that connects directly to a given Wavefront service.
             /// </summary>
             /// <returns>A new <see cref="WavefrontDirectIngestionClient"/>.</returns>
@@ -140,10 +151,20 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                 client.timer.Elapsed += client.Run;
                 client.timer.Enabled = true;
 
-                client.sdkMetricsRegistry = new WavefrontSdkMetricsRegistry.Builder(client)
-                    .Prefix(Constants.SdkMetricPrefix + ".core.sender.direct")
-                    .Tag(Constants.ProcessTagKey, Process.GetCurrentProcess().Id.ToString())
-                    .Build();
+                if (enableInternalMetrics)
+                {
+                    client.sdkMetricsRegistry = new WavefrontSdkMetricsRegistry.Builder(client)
+                        .Prefix(Constants.SdkMetricPrefix + ".core.sender.direct")
+                        .Tag(Constants.ProcessTagKey, Process.GetCurrentProcess().Id.ToString())
+                        .Build();
+                }
+                else
+                {
+                    client.sdkMetricsRegistry = new WavefrontSdkMetricsRegistry.Builder(null)
+                        .Prefix(Constants.SdkMetricPrefix + ".core.sender.direct")
+                        .Tag(Constants.ProcessTagKey, Process.GetCurrentProcess().Id.ToString())
+                        .Build();
+                }
 
                 client.sdkMetricsRegistry.Gauge("points.queue.size",
                     () => client.metricsBuffer.Count);
