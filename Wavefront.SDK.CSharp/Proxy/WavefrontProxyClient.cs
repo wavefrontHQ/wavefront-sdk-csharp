@@ -18,9 +18,7 @@ namespace Wavefront.SDK.CSharp.Proxy
     /// </summary>
     public class WavefrontProxyClient : IWavefrontSender
     {
-        private static readonly ILogger Logger =
-            Logging.LoggerFactory.CreateLogger<WavefrontProxyClient>();
-
+        private ILogger logger;
         private ProxyConnectionHandler metricsProxyConnectionHandler;
         private ProxyConnectionHandler histogramProxyConnectionHandler;
         private ProxyConnectionHandler tracingProxyConnectionHandler;
@@ -64,6 +62,7 @@ namespace Wavefront.SDK.CSharp.Proxy
             private int? tracingPort;
             private int flushIntervalSeconds = 5;
             private bool enableInternalMetrics = true;
+            private ILoggerFactory loggerFactory;
 
             /// <summary>
             /// Creates a new
@@ -138,18 +137,35 @@ namespace Wavefront.SDK.CSharp.Proxy
             }
 
             /// <summary>
+            /// Sets the logger factory used to create the client's logger.
+            /// </summary>
+            /// <param name="loggerFactory">The logger factory.</param>
+            /// <returns><see cref="this"/></returns>
+            public Builder LoggerFactory(ILoggerFactory loggerFactory)
+            {
+                this.loggerFactory = loggerFactory;
+                return this;
+            }
+
+            /// <summary>
             /// Builds a new client that connects to the Wavefront Proxy Agent.
             /// </summary>
             /// <returns>A new <see cref="WavefrontProxyClient"/>.</returns>
             public WavefrontProxyClient Build()
             {
-                var client = new WavefrontProxyClient();
+                loggerFactory = loggerFactory ?? Logging.LoggerFactory;
+
+                var client = new WavefrontProxyClient
+                {
+                    logger = loggerFactory.CreateLogger<WavefrontProxyClient>()
+                };
 
                 if (enableInternalMetrics)
                 {
                     client.sdkMetricsRegistry = new WavefrontSdkMetricsRegistry.Builder(client)
                         .Prefix(Constants.SdkMetricPrefix + ".core.sender.proxy")
                         .Tag(Constants.ProcessTagKey, Process.GetCurrentProcess().Id.ToString())
+                        .LoggerFactory(loggerFactory)
                         .Build();
                 }
                 else
@@ -157,6 +173,7 @@ namespace Wavefront.SDK.CSharp.Proxy
                     client.sdkMetricsRegistry = new WavefrontSdkMetricsRegistry.Builder(null)
                         .Prefix(Constants.SdkMetricPrefix + ".core.sender.proxy")
                         .Tag(Constants.ProcessTagKey, Process.GetCurrentProcess().Id.ToString())
+                        .LoggerFactory(loggerFactory)
                         .Build();
                 }
 
@@ -168,7 +185,7 @@ namespace Wavefront.SDK.CSharp.Proxy
                 {
                     client.metricsProxyConnectionHandler = new ProxyConnectionHandler(
                         proxyHostName, metricsPort.Value, client.sdkMetricsRegistry,
-                        "metricHandler");
+                        "metricHandler", loggerFactory);
                 }
 
                 if (distributionPort == null)
@@ -179,7 +196,7 @@ namespace Wavefront.SDK.CSharp.Proxy
                 {
                     client.histogramProxyConnectionHandler = new ProxyConnectionHandler(
                         proxyHostName, distributionPort.Value, client.sdkMetricsRegistry,
-                        "histogramHandler");
+                        "histogramHandler", loggerFactory);
                 }
 
                 if (tracingPort == null)
@@ -190,7 +207,7 @@ namespace Wavefront.SDK.CSharp.Proxy
                 {
                     client.tracingProxyConnectionHandler = new ProxyConnectionHandler(
                         proxyHostName, tracingPort.Value, client.sdkMetricsRegistry,
-                        "tracingHandler");
+                        "tracingHandler", loggerFactory);
                 }
 
                 client.timer = new Timer(flushIntervalSeconds * 1000);
@@ -232,7 +249,7 @@ namespace Wavefront.SDK.CSharp.Proxy
             if (metricsProxyConnectionHandler == null)
             {
                 pointsDiscarded.Inc();
-                Logger.LogWarning("Can't send data to Wavefront. " +
+                logger.LogWarning("Can't send data to Wavefront. " +
                     "Please configure metrics port for Wavefront proxy.");
                 return;
             }
@@ -267,7 +284,7 @@ namespace Wavefront.SDK.CSharp.Proxy
             if (histogramProxyConnectionHandler == null)
             {
                 histogramsDiscarded.Inc();
-                Logger.LogWarning("Can't send data to Wavefront. " +
+                logger.LogWarning("Can't send data to Wavefront. " +
                     "Please configure histogram distribution port for Wavefront proxy.");
                 return;
             }
@@ -306,7 +323,7 @@ namespace Wavefront.SDK.CSharp.Proxy
                 {
                     spanLogsDiscarded.Inc();
                 }
-                Logger.LogWarning("Can't send data to Wavefront. " +
+                logger.LogWarning("Can't send data to Wavefront. " +
                     "Please configure histogram distribution port for Wavefront proxy.");
                 return;
             }
@@ -364,7 +381,7 @@ namespace Wavefront.SDK.CSharp.Proxy
             catch (Exception)
             {
                 spanLogsInvalid.Inc();
-                Logger.LogWarning($"Unable to serialize span logs to json: traceId:{traceId}" +
+                logger.LogWarning($"Unable to serialize span logs to json: traceId:{traceId}" +
                     $" spanId:{spanId} spanLogs:{spanLogs}");
             }
         }
@@ -377,7 +394,7 @@ namespace Wavefront.SDK.CSharp.Proxy
             }
             catch (Exception e)
             {
-                Logger.LogWarning(0, e, "Unable to report to Wavefront cluster");
+                logger.LogWarning(0, e, "Unable to report to Wavefront cluster");
             }
         }
 
@@ -424,7 +441,7 @@ namespace Wavefront.SDK.CSharp.Proxy
             }
             catch (IOException e)
             {
-                Logger.LogWarning(0, e, "error flushing buffer");
+                logger.LogWarning(0, e, "error flushing buffer");
             }
 
             timer.Dispose();
@@ -435,7 +452,7 @@ namespace Wavefront.SDK.CSharp.Proxy
             }
             catch (IOException e)
             {
-                Logger.LogWarning(0, e, "error closing metricsProxyConnectionHandler");
+                logger.LogWarning(0, e, "error closing metricsProxyConnectionHandler");
             }
 
             try
@@ -444,7 +461,7 @@ namespace Wavefront.SDK.CSharp.Proxy
             }
             catch (IOException e)
             {
-                Logger.LogWarning(0, e, "error closing histogramProxyConnectionHandler");
+                logger.LogWarning(0, e, "error closing histogramProxyConnectionHandler");
             }
 
             try
@@ -453,7 +470,7 @@ namespace Wavefront.SDK.CSharp.Proxy
             }
             catch (IOException e)
             {
-                Logger.LogWarning(0, e, "error closing tracingProxyConnectionHandler");
+                logger.LogWarning(0, e, "error closing tracingProxyConnectionHandler");
             }
         }
     }

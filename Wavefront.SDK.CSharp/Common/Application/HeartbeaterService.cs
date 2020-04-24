@@ -12,9 +12,7 @@ namespace Wavefront.SDK.CSharp.Common.Application
     /// </summary>
     public class HeartbeaterService : IDisposable
     {
-        private static readonly ILogger Logger =
-            Logging.LoggerFactory.CreateLogger<HeartbeaterService>();
-
+        private readonly ILogger logger;
         private readonly IWavefrontMetricSender wavefrontMetricSender;
         private readonly IList<IDictionary<string, string>> heartbeatMetricTagsList;
         private readonly string source;
@@ -53,11 +51,32 @@ namespace Wavefront.SDK.CSharp.Common.Application
             ApplicationTags applicationTags,
             IList<string> components,
             string source)
+            : this(wavefrontMetricSender, applicationTags, components, source, Logging.LoggerFactory)
+        { }
+
+        /// <summary>
+        /// Construct a HeartbeaterService that periodically reports heartbeats for multiple
+        /// components.
+        /// </summary>
+        /// <param name="wavefrontMetricSender">
+        /// Sender that handles sending of heartbeat metrics to Wavefront.
+        /// </param>
+        /// <param name="applicationTags">Application tags.</param>
+        /// <param name="components">List of components to send heartbeats for.</param>
+        /// <param name="source">The source (or host).</param>
+        /// <param name="source">The logger factory used to create a logger.</param>
+        public HeartbeaterService(
+            IWavefrontMetricSender wavefrontMetricSender,
+            ApplicationTags applicationTags,
+            IList<string> components,
+            string source,
+            ILoggerFactory loggerFactory)
         {
             this.wavefrontMetricSender = wavefrontMetricSender;
             this.source = source;
             heartbeatMetricTagsList = new List<IDictionary<string, string>>();
             customTagsSet = new ConcurrentDictionary<IDictionary<string, string>, bool>(new TagsDictionaryComparer());
+            logger = loggerFactory.CreateLogger<HeartbeaterService>() ?? throw new ArgumentNullException(nameof(loggerFactory));
             foreach (string component in components)
             {
                 var tags = new Dictionary<string, string>
@@ -114,7 +133,7 @@ namespace Wavefront.SDK.CSharp.Common.Application
                 }
                 catch (Exception)
                 {
-                    Logger.LogWarning($"Cannot report custom {Constants.HeartbeatMetric} to Wavefront");
+                    logger.LogWarning($"Cannot report custom {Constants.HeartbeatMetric} to Wavefront");
                 }
             }
 
@@ -128,7 +147,7 @@ namespace Wavefront.SDK.CSharp.Common.Application
                 }
                 catch (Exception)
                 {
-                    Logger.LogWarning($"Cannot report {Constants.HeartbeatMetric} to Wavefront");
+                    logger.LogWarning($"Cannot report {Constants.HeartbeatMetric} to Wavefront");
                 }
             }
         }

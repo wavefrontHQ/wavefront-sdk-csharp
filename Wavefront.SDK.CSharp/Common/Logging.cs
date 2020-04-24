@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Wavefront.SDK.CSharp.Common
 {
@@ -9,19 +10,21 @@ namespace Wavefront.SDK.CSharp.Common
     {
         private static ILoggerFactory loggerFactory = null;
 
-        public static void ConfigureLogger(ILoggerFactory factory)
-        {
-            factory.AddDebug();
-        }
-
         public static ILoggerFactory LoggerFactory
         {
             get
             {
                 if (loggerFactory == null)
                 {
+#if NET452 || NET46
                     loggerFactory = new LoggerFactory();
-                    ConfigureLogger(loggerFactory);
+                    loggerFactory.AddDebug();
+#else
+                    loggerFactory = new ServiceCollection()
+                        .AddLogging(builder => builder.AddDebug())
+                        .BuildServiceProvider()
+                        .GetService<ILoggerFactory>();
+#endif
                 }
                 return loggerFactory;
             }

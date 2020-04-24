@@ -16,9 +16,7 @@ namespace Wavefront.SDK.CSharp.Common
     /// </summary>
     public class ReconnectingSocket
     {
-        private static readonly ILogger Logger =
-            Logging.LoggerFactory.CreateLogger<ReconnectingSocket>();
-
+        private readonly ILogger logger;
         private readonly int serverReadTimeoutMillis = 2000;
         private readonly int serverConnectTimeoutMillis = 2000;
         private readonly int bufferSize = 8192;
@@ -44,9 +42,24 @@ namespace Wavefront.SDK.CSharp.Common
         /// <param name="port">The port number of the Wavefront proxy to connect to.</param>
         public ReconnectingSocket(string host, int port,
             WavefrontSdkMetricsRegistry sdkMetricsRegistry, string entityPrefix)
+            : this(host, port, sdkMetricsRegistry, entityPrefix, Logging.LoggerFactory)
+        { }
+
+        /// <summary>
+        /// Initializes a new instance of the
+        /// <see cref="T:Wavefront.SDK.CSharp.Common.ReconnectingSocket"/> class.
+        /// </summary>
+        /// <param name="host">The hostname of the Wavefront proxy.</param>
+        /// <param name="port">The port number of the Wavefront proxy to connect to.</param>
+        /// <param name="loggerFactory">The logger factory used to create a logger.</param>
+        public ReconnectingSocket(string host, int port,
+            WavefrontSdkMetricsRegistry sdkMetricsRegistry, string entityPrefix,
+            ILoggerFactory loggerFactory)
         {
             this.host = host;
             this.port = port;
+            logger = loggerFactory.CreateLogger<ReconnectingSocket>() ??
+                throw new ArgumentNullException(nameof(loggerFactory));
 
             entityPrefix = string.IsNullOrWhiteSpace(entityPrefix) ? "" : entityPrefix + ".";
             writeSuccesses = sdkMetricsRegistry.Counter(entityPrefix + "write.success");
@@ -83,7 +96,7 @@ namespace Wavefront.SDK.CSharp.Common
                     }
                     catch (IOException e)
                     {
-                        Logger.LogInformation(0, e, "Could not flush and close socket.");
+                        logger.LogInformation(0, e, "Could not flush and close socket.");
                     }
                     client.Close();
                     client = new TcpClient
@@ -106,12 +119,12 @@ namespace Wavefront.SDK.CSharp.Common
                         {
                             resetSuccesses.Inc();
                         }
-                        Logger.LogInformation(
+                        logger.LogInformation(
                                string.Format("Successfully connected to {0}:{1}", host, port));
                     }
                     else
                     {
-                        Logger.LogWarning(string.Format("Unable to connect to {0}:{1}", host, port));
+                        logger.LogWarning(string.Format("Unable to connect to {0}:{1}", host, port));
                         client.Close();
                     }
                 }
@@ -121,7 +134,7 @@ namespace Wavefront.SDK.CSharp.Common
                     {
                         resetErrors.Inc();
                     }
-                    Logger.LogWarning(0, e,
+                    logger.LogWarning(0, e,
                         string.Format("Unable to connect to {0}:{1}", host, port));
                     client.Close();
                     throw new IOException(e.Message, e);
@@ -159,7 +172,7 @@ namespace Wavefront.SDK.CSharp.Common
             {
                 try
                 {
-                    Logger.LogWarning(0, e, "Attempting to reset socket connection.");
+                    logger.LogWarning(0, e, "Attempting to reset socket connection.");
                     await ResetSocketAsync();
                     await socketOutputStream.WriteAsync(bytes, 0, bytes.Length);
                     writeSuccesses.Inc();
@@ -185,7 +198,7 @@ namespace Wavefront.SDK.CSharp.Common
             catch (Exception e)
             {
                 flushErrors.Inc();
-                Logger.LogWarning(0, e, "Attempting to reset socket connection.");
+                logger.LogWarning(0, e, "Attempting to reset socket connection.");
                 await ResetSocketAsync();
             }
         }
@@ -201,7 +214,7 @@ namespace Wavefront.SDK.CSharp.Common
             }
             catch (IOException e)
             {
-                Logger.LogInformation(0, e, "Could not flush and close socket.");
+                logger.LogInformation(0, e, "Could not flush and close socket.");
             }
             client.Close();
         }

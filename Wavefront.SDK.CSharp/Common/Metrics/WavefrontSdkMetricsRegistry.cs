@@ -12,9 +12,7 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
     /// </summary>
     public class WavefrontSdkMetricsRegistry : IDisposable
     {
-        private static readonly ILogger Logger =
-            Logging.LoggerFactory.CreateLogger<WavefrontSdkMetricsRegistry>();
-
+        private ILogger logger;
         private IWavefrontMetricSender wavefrontMetricSender;
         private string source;
         private IDictionary<string, string> tags;
@@ -32,6 +30,7 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
             private int reportingIntervalSeconds = 60;
             private string source;
             private string prefix;
+            private ILoggerFactory loggerFactory;
 
             /// <summary>
             /// Constructor.
@@ -113,11 +112,24 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
             }
 
             /// <summary>
+            /// Sets the logger factory used to create the registry's logger.
+            /// </summary>
+            /// <param name="loggerFactory">The logger factory.</param>
+            /// <returns><see cref="this"/></returns>
+            public Builder LoggerFactory(ILoggerFactory loggerFactory)
+            {
+                this.loggerFactory = loggerFactory;
+                return this;
+            }
+
+            /// <summary>
             /// Builds a registry.
             /// </summary>
             /// <returns>A new instance of the registry.</returns>
             public WavefrontSdkMetricsRegistry Build()
             {
+                loggerFactory = loggerFactory ?? Logging.LoggerFactory;
+
                 var registry = new WavefrontSdkMetricsRegistry
                 {
                     wavefrontMetricSender = wavefrontMetricSender,
@@ -125,6 +137,7 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
                     tags = tags,
                     prefix = string.IsNullOrWhiteSpace(prefix) ? "" : prefix + ".",
                     metrics = new ConcurrentDictionary<string, IWavefrontSdkMetric>(),
+                    logger = loggerFactory.CreateLogger<WavefrontSdkMetricsRegistry>()
                 };
 
                 registry.timer = new System.Timers.Timer(reportingIntervalSeconds * 1000);
@@ -161,7 +174,7 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogWarning(0, ex, "Unable to send internal SDK metric");
+                    logger.LogWarning(0, ex, "Unable to send internal SDK metric");
                 }
             }
         }

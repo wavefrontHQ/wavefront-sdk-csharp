@@ -253,6 +253,47 @@ namespace Wavefront.SDK.CSharp.Test
                 new Guid("0313bafe-9457-11e8-9eb6-529269fb1459"),
                 spanLogs);
 
+#if NET452 || NET46
+            Assert.True(
+                actual.Equals("{" +
+                                  "\"traceId\":\"7b3bf470-9456-11e8-9eb6-529269fb1459\"," +
+                                  "\"spanId\":\"0313bafe-9457-11e8-9eb6-529269fb1459\"," +
+                                  "\"logs\":[" +
+                                    "{" +
+                                        "\"timestamp\":1493773500123," +
+                                        "\"fields\":{" +
+                                            "\"event\":\"error\"," +
+                                            "\"event.kind\":\"\\\"exception\\\"\"" +
+                                        "}" +
+                                    "}," +
+                                    "{" +
+                                        "\"timestamp\":1493773500139," +
+                                        "\"fields\":{" +
+                                            "\"info\":\"newline:\\u000a\"" +
+                                        "}" +
+                                    "}" +
+                                  "]" +
+                              "}\n") ||
+                actual.Equals("{" +
+                                  "\"traceId\":\"7b3bf470-9456-11e8-9eb6-529269fb1459\"," +
+                                  "\"spanId\":\"0313bafe-9457-11e8-9eb6-529269fb1459\"," +
+                                  "\"logs\":[" +
+                                    "{" +
+                                        "\"timestamp\":1493773500123," +
+                                        "\"fields\":{" +
+                                            "\"event.kind\":\"\\\"exception\\\"\"," +
+                                            "\"event\":\"error\"" +
+                                        "}" +
+                                    "}," +
+                                    "{" +
+                                        "\"timestamp\":1493773500139," +
+                                        "\"fields\":{" +
+                                            "\"info\":\"newline:\\u000a\"" +
+                                        "}" +
+                                    "}" +
+                                  "]" +
+                              "}\n"));
+#else
             Assert.True(
                 actual.Equals("{" +
                                   "\"traceId\":\"7b3bf470-9456-11e8-9eb6-529269fb1459\"," +
@@ -292,6 +333,7 @@ namespace Wavefront.SDK.CSharp.Test
                                     "}" +
                                   "]" +
                               "}\n"));
+#endif
         }
     }
 }
