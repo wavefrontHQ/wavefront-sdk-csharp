@@ -75,8 +75,10 @@ namespace Wavefront.SDK.CSharp.Common.Application
             this.wavefrontMetricSender = wavefrontMetricSender;
             this.source = source;
             heartbeatMetricTagsList = new List<IDictionary<string, string>>();
-            customTagsSet = new ConcurrentDictionary<IDictionary<string, string>, bool>(new TagsDictionaryComparer());
-            logger = loggerFactory.CreateLogger<HeartbeaterService>() ?? throw new ArgumentNullException(nameof(loggerFactory));
+            customTagsSet = new ConcurrentDictionary<IDictionary<string, string>, bool>(
+                new TagsDictionaryComparer());
+            logger = loggerFactory.CreateLogger<HeartbeaterService>() ??
+                throw new ArgumentNullException(nameof(loggerFactory));
             foreach (string component in components)
             {
                 var tags = new Dictionary<string, string>
