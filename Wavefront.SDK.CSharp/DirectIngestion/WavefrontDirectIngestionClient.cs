@@ -21,9 +21,8 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
     public class WavefrontDirectIngestionClient : IWavefrontSender
     {
         private static readonly string DefaultSource = Utils.GetDefaultSource();
-        private static readonly ILogger Logger =
-            Logging.LoggerFactory.CreateLogger<WavefrontDirectIngestionClient>();
 
+        private ILogger logger;
         private int batchSize;
         private BlockingCollection<string> metricsBuffer;
         private BlockingCollection<string> histogramsBuffer;
@@ -69,6 +68,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             private int batchSize = 10000;
             private int flushIntervalSeconds = 1;
             private bool enableInternalMetrics = true;
+            private ILoggerFactory loggerFactory;
 
             /// <summary>
             /// Creates a new
@@ -132,11 +132,24 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             }
 
             /// <summary>
+            /// Sets the logger factory used to create the client's logger.
+            /// </summary>
+            /// <param name="loggerFactory">The logger factory.</param>
+            /// <returns><see cref="this"/></returns>
+            public Builder LoggerFactory(ILoggerFactory loggerFactory)
+            {
+                this.loggerFactory = loggerFactory;
+                return this;
+            }
+
+            /// <summary>
             /// Creates a new client that connects directly to a given Wavefront service.
             /// </summary>
             /// <returns>A new <see cref="WavefrontDirectIngestionClient"/>.</returns>
             public WavefrontDirectIngestionClient Build()
             {
+                loggerFactory = loggerFactory ?? Logging.LoggerFactory;
+
                 var client = new WavefrontDirectIngestionClient
                 {
                     batchSize = batchSize,
@@ -144,7 +157,8 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                     histogramsBuffer = new BlockingCollection<string>(maxQueueSize),
                     tracingSpansBuffer = new BlockingCollection<string>(maxQueueSize),
                     spanLogsBuffer = new BlockingCollection<string>(maxQueueSize),
-                    directService = new DataIngesterService(server, token)
+                    directService = new DataIngesterService(server, token),
+                    logger = loggerFactory.CreateLogger<WavefrontDirectIngestionClient>()
                 };
 
                 client.timer = new Timer(flushIntervalSeconds * 1000);
@@ -156,6 +170,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                     client.sdkMetricsRegistry = new WavefrontSdkMetricsRegistry.Builder(client)
                         .Prefix(Constants.SdkMetricPrefix + ".core.sender.direct")
                         .Tag(Constants.ProcessTagKey, Process.GetCurrentProcess().Id.ToString())
+                        .LoggerFactory(loggerFactory)
                         .Build();
                 }
                 else
@@ -163,6 +178,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                     client.sdkMetricsRegistry = new WavefrontSdkMetricsRegistry.Builder(null)
                         .Prefix(Constants.SdkMetricPrefix + ".core.sender.direct")
                         .Tag(Constants.ProcessTagKey, Process.GetCurrentProcess().Id.ToString())
+                        .LoggerFactory(loggerFactory)
                         .Build();
                 }
 
@@ -235,7 +251,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             if (!metricsBuffer.TryAdd(lineData))
             {
                 pointsDropped.Inc();
-                Logger.LogWarning("Buffer full, dropping metric point: " + lineData);
+                logger.LogWarning("Buffer full, dropping metric point: " + lineData);
             }
         }
 
@@ -263,7 +279,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             if (!histogramsBuffer.TryAdd(lineData))
             {
                 histogramsDropped.Inc();
-                Logger.LogWarning("Buffer full, dropping histograms: " + lineData);
+                logger.LogWarning("Buffer full, dropping histograms: " + lineData);
             }
         }
 
@@ -302,7 +318,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                 {
                     spanLogsDropped.Inc();
                 }
-                Logger.LogWarning("Buffer full, dropping span: " + lineData);
+                logger.LogWarning("Buffer full, dropping span: " + lineData);
             }
         }
 
@@ -315,13 +331,13 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                 if (!spanLogsBuffer.TryAdd(lineData))
                 {
                     spanLogsDropped.Inc();
-                    Logger.LogWarning("Buffer full, dropping span logs: " + lineData);
+                    logger.LogWarning("Buffer full, dropping span logs: " + lineData);
                 }
             }
             catch (Exception)
             {
                 spanLogsInvalid.Inc();
-                Logger.LogWarning($"Unable to serialize span logs to json: traceId:{traceId}" +
+                logger.LogWarning($"Unable to serialize span logs to json: traceId:{traceId}" +
                     $" spanId:{spanId} spanLogs:{spanLogs}");
             }
         }
@@ -334,7 +350,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             }
             catch (Exception e)
             {
-                Logger.LogWarning(0, e, "Unable to report to Wavefront cluster");
+                logger.LogWarning(0, e, "Unable to report to Wavefront cluster");
             }
         }
 
@@ -368,7 +384,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                     sdkMetricsRegistry.Counter(entityPrefix + ".report." + statusCode).Inc();
                     if (statusCode >= 400 && statusCode < 600)
                     {
-                        Logger.LogWarning("Error reporting points, respStatus=" + statusCode);
+                        logger.LogWarning("Error reporting points, respStatus=" + statusCode);
                         int numAddedBackToBuffer = 0;
                         foreach (var item in batch)
                         {
@@ -379,7 +395,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                             else
                             {
                                 dropped.Inc(batch.Count - numAddedBackToBuffer);
-                                Logger.LogWarning("Buffer full, dropping attempted points");
+                                logger.LogWarning("Buffer full, dropping attempted points");
                                 return;
                             }
                         }
@@ -436,7 +452,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             }
             catch (IOException e)
             {
-                Logger.LogWarning(0, e, "error flushing buffer");
+                logger.LogWarning(0, e, "error flushing buffer");
             }
 
             timer.Dispose();

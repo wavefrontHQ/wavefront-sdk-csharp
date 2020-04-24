@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ namespace Wavefront.SDK.CSharp.Proxy
     {
         private readonly string host;
         private readonly int port;
+        private readonly ILoggerFactory loggerFactory;
         private volatile ReconnectingSocket reconnectingSocket;
 
         private readonly WavefrontSdkMetricsRegistry sdkMetricsRegistry;
@@ -23,9 +25,16 @@ namespace Wavefront.SDK.CSharp.Proxy
 
         protected internal ProxyConnectionHandler(string host, int port,
             WavefrontSdkMetricsRegistry sdkMetricsRegistry, string entityPrefix)
+            : this(host, port, sdkMetricsRegistry, entityPrefix, Logging.LoggerFactory)
+        { }
+
+        protected internal ProxyConnectionHandler(string host, int port,
+            WavefrontSdkMetricsRegistry sdkMetricsRegistry, string entityPrefix,
+            ILoggerFactory loggerFactory)
         {
             this.host = host;
             this.port = port;
+            this.loggerFactory = loggerFactory;
             reconnectingSocket = null;
 
             this.sdkMetricsRegistry = sdkMetricsRegistry;
@@ -47,7 +56,7 @@ namespace Wavefront.SDK.CSharp.Proxy
             try
             {
                 reconnectingSocket = new ReconnectingSocket(host, port, sdkMetricsRegistry,
-                    entityPrefix + "socket");
+                    entityPrefix + "socket", loggerFactory);
             }
             catch (Exception e)
             {

@@ -4,7 +4,6 @@ using System.IO;
 using System.Net;
 using System.Runtime.Serialization.Json;
 using System.Text;
-using Microsoft.Extensions.Logging;
 using Wavefront.SDK.CSharp.Entities.Histograms;
 using Wavefront.SDK.CSharp.Entities.Tracing;
 
@@ -15,9 +14,6 @@ namespace Wavefront.SDK.CSharp.Common
     /// </summary>
     public static class Utils
     {
-        private static readonly ILogger Logger =
-            Logging.LoggerFactory.CreateLogger(typeof(Utils));
-
         /// <summary>
         /// Sanitizes a string to be a valid Wavefront metric name, source, or tag key.
         /// </summary>
