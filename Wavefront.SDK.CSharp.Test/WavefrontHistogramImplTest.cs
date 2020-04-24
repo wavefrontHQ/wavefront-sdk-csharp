@@ -179,19 +179,19 @@ namespace Wavefront.SDK.CSharp.Test
             Assert.Equal(288.6749902572095, rangeSnapshot.StdDev, 5);
             Assert.Equal(500500, rangeSnapshot.Sum);
             Assert.Equal(Enumerable.Range(1, 1000).Select(i => (double)i), rangeSnapshot.Values);
-            Assert.Equal(500.5, rangeSnapshot.GetValue(0.5d));
-            Assert.Equal(750.5, rangeSnapshot.GetValue(0.75d));
-            Assert.Equal(950.5, rangeSnapshot.GetValue(0.95d));
-            Assert.Equal(980.5, rangeSnapshot.GetValue(0.98d));
-            Assert.Equal(990.5, rangeSnapshot.GetValue(0.99d));
-            Assert.Equal(999.5, rangeSnapshot.GetValue(0.999d));
+            Assert.Equal(501, rangeSnapshot.GetValue(0.5d), 1);
+            Assert.Equal(751, rangeSnapshot.GetValue(0.75d), 1);
+            Assert.Equal(951, rangeSnapshot.GetValue(0.95d), 1);
+            Assert.Equal(981, rangeSnapshot.GetValue(0.98d), 1);
+            Assert.Equal(991, rangeSnapshot.GetValue(0.99d), 1);
+            Assert.Equal(1000, rangeSnapshot.GetValue(0.999d), 1);
 
             // Test snapshot for multi-threaded histogram
 
             Assert.Equal(100, multiThreadedSnapshot.Count);
             Assert.Equal(28.86607004772212, multiThreadedSnapshot.StdDev, 5);
             Assert.Equal(5050, multiThreadedSnapshot.Sum);
-            Assert.Equal(99.5, multiThreadedSnapshot.GetValue(0.999d), 0);
+            Assert.Equal(100, multiThreadedSnapshot.GetValue(0.999d), 1);
 
             // Test snapshot for empty histogram
 
