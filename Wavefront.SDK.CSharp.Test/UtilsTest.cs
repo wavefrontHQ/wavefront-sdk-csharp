@@ -21,6 +21,7 @@ namespace Wavefront.SDK.CSharp.Test
             Assert.Equal("\"hello.world\"", Utils.Sanitize("hello.world"));
             Assert.Equal("\"hello-world-\"", Utils.Sanitize("hello\"world\""));
             Assert.Equal("\"hello-world\"", Utils.Sanitize("hello'world"));
+            Assert.Equal("\"hello-world\"", Utils.Sanitize("hello/world"));
             Assert.Equal("\"~component.heartbeat\"", Utils.Sanitize("~component.heartbeat"));
             Assert.Equal("\"-component.heartbeat\"", Utils.Sanitize("!component.heartbeat"));
             Assert.Equal("\"Δcomponent.heartbeat\"", Utils.Sanitize("Δcomponent.heartbeat"));
@@ -64,11 +65,11 @@ namespace Wavefront.SDK.CSharp.Test
                 "\"new-york.power.usage\" 42422 source=\"localhost\"\n",
                 Utils.MetricToLineData("new-york.power.usage", 42422, null, "localhost", null,
                                        "defaultSource"));
-            // invalid char in metric name, source, and tag key. whitespace in tag value
+            // invalid char in metric name and tag key. whitespace in tag value
             Assert.Equal(
-                "\"new-york.power.usage\" 42422 1493773500 source=\"local-host\" \"-key-name-1\"=\"val name 1\"\n",
+                "\"new-york.power.usage\" 42422 1493773500 source=\"localhost:50050\" \"-key-name-1\"=\"val name 1\"\n",
                 Utils.MetricToLineData(
-                    "new~york.power.usage", 42422, 1493773500L, "local~host",
+                    "new~york.power.usage", 42422, 1493773500L, "localhost:50050",
                     new Dictionary<string, string> { { " key name~1", " val name 1 " } }.ToImmutableDictionary(),
                     "defaultSource"));
         }
