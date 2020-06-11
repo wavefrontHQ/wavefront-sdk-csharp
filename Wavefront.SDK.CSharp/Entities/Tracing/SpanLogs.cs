@@ -32,11 +32,19 @@ namespace Wavefront.SDK.CSharp.Entities.Tracing
         [DataMember(Name = "logs", IsRequired = true, Order = 3)]
         public IList<SpanLog> Logs { get; private set; }
 
-        public SpanLogs(Guid traceId, Guid spanId, IList<SpanLog> logs)
+        /// <summary>
+        /// Gets the corresponding span in Wavefront data format.
+        /// </summary>
+        /// <value>The span in Wavefront data format.</value>
+        [DataMember(Name = "span", IsRequired = false, Order = 4)]
+        public string Span { get; private set; }
+
+        public SpanLogs(Guid traceId, Guid spanId, IList<SpanLog> logs, string span = null)
         {
             TraceId = traceId;
             SpanId = spanId;
             Logs = logs;
+            Span = span;
         }
     }
 }
