@@ -273,7 +273,8 @@ namespace Wavefront.SDK.CSharp.Test
                                             "\"info\":\"newline:\\u000a\"" +
                                         "}" +
                                     "}" +
-                                  "]" +
+                                  "]," +
+                                  "\"span\":null" +
                               "}\n") ||
                 actual.Equals("{" +
                                   "\"traceId\":\"7b3bf470-9456-11e8-9eb6-529269fb1459\"," +
@@ -292,7 +293,8 @@ namespace Wavefront.SDK.CSharp.Test
                                             "\"info\":\"newline:\\u000a\"" +
                                         "}" +
                                     "}" +
-                                  "]" +
+                                  "]," +
+                                  "\"span\":null" +
                               "}\n"));
 #else
             Assert.True(
@@ -313,7 +315,8 @@ namespace Wavefront.SDK.CSharp.Test
                                             "\"info\":\"newline:\\n\"" +
                                         "}" +
                                     "}" +
-                                  "]" +
+                                  "]," +
+                                  "\"span\":null" +
                               "}\n") ||
                 actual.Equals("{" +
                                   "\"traceId\":\"7b3bf470-9456-11e8-9eb6-529269fb1459\"," +
@@ -332,8 +335,73 @@ namespace Wavefront.SDK.CSharp.Test
                                             "\"info\":\"newline:\\n\"" +
                                         "}" +
                                     "}" +
-                                  "]" +
+                                  "]," +
+                                  "\"span\":null" +
                               "}\n"));
+#endif
+        }
+
+        [Fact]
+        public void TestSpanLogsToLineDataWithSpan()
+        {
+            var spanLogs = new List<SpanLog>();
+            spanLogs.Add(new SpanLog(1493773500123,
+                new Dictionary<string, string> { { "event", "error" } }.ToImmutableDictionary()));
+
+            string actual = Utils.SpanLogsToLineData(
+                new Guid("7b3bf470-9456-11e8-9eb6-529269fb1459"),
+                new Guid("0313bafe-9457-11e8-9eb6-529269fb1459"),
+                spanLogs,
+                "\"getAllUsers\" source=\"localhost\" " +
+                "traceId=7b3bf470-9456-11e8-9eb6-529269fb1459 " +
+                "spanId=0313bafe-9457-11e8-9eb6-529269fb1459 " +
+                "parent=2f64e538-9457-11e8-9eb6-529269fb1459 " +
+                "followsFrom=5f64e538-9457-11e8-9eb6-529269fb1459 " +
+                "\"application\"=\"Wavefront\" " +
+                "\"http.method\"=\"GET\" 1493773500 343500\n");
+
+#if NET452 || NET46
+            Assert.Equal("{" +
+                            "\"traceId\":\"7b3bf470-9456-11e8-9eb6-529269fb1459\"," +
+                            "\"spanId\":\"0313bafe-9457-11e8-9eb6-529269fb1459\"," +
+                            "\"logs\":[" +
+                                "{" +
+                                    "\"timestamp\":1493773500123," +
+                                    "\"fields\":{" +
+                                        "\"event\":\"error\"" +
+                                    "}" +
+                                "}" +
+                            "]," +
+                            "\"span\":\"\\\"getAllUsers\\\" source=\\\"localhost\\\" " +
+                                "traceId=7b3bf470-9456-11e8-9eb6-529269fb1459 " +
+                                "spanId=0313bafe-9457-11e8-9eb6-529269fb1459 " +
+                                "parent=2f64e538-9457-11e8-9eb6-529269fb1459 " +
+                                "followsFrom=5f64e538-9457-11e8-9eb6-529269fb1459 " +
+                                "\\\"application\\\"=\\\"Wavefront\\\" " +
+                                "\\\"http.method\\\"=\\\"GET\\\" " +
+                                "1493773500 343500\\u000a\"" +
+                        "}\n", actual);
+#else
+            Assert.Equal("{" +
+                            "\"traceId\":\"7b3bf470-9456-11e8-9eb6-529269fb1459\"," +
+                            "\"spanId\":\"0313bafe-9457-11e8-9eb6-529269fb1459\"," +
+                            "\"logs\":[" +
+                                "{" +
+                                    "\"timestamp\":1493773500123," +
+                                    "\"fields\":{" +
+                                        "\"event\":\"error\"" +
+                                    "}" +
+                                "}" +
+                            "]," +
+                            "\"span\":\"\\\"getAllUsers\\\" source=\\\"localhost\\\" " +
+                                "traceId=7b3bf470-9456-11e8-9eb6-529269fb1459 " +
+                                "spanId=0313bafe-9457-11e8-9eb6-529269fb1459 " +
+                                "parent=2f64e538-9457-11e8-9eb6-529269fb1459 " +
+                                "followsFrom=5f64e538-9457-11e8-9eb6-529269fb1459 " +
+                                "\\\"application\\\"=\\\"Wavefront\\\" " +
+                                "\\\"http.method\\\"=\\\"GET\\\" " +
+                                "1493773500 343500\\n\"" +
+                        "}\n", actual);
 #endif
         }
     }

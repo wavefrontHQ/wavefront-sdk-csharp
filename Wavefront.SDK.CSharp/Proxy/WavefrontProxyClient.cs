@@ -350,7 +350,7 @@ namespace Wavefront.SDK.CSharp.Proxy
                         // Send valid span logs only if the span was successfully sent
                         if (spanLogs != null && spanLogs.Count > 0)
                         {
-                            SendSpanLogs(traceId, spanId, spanLogs);
+                            SendSpanLogs(traceId, spanId, spanLogs, lineData);
                         }
                     }
                     else
@@ -365,11 +365,11 @@ namespace Wavefront.SDK.CSharp.Proxy
                 });
         }
 
-        private void SendSpanLogs(Guid traceId, Guid spanId, IList<SpanLog> spanLogs)
+        private void SendSpanLogs(Guid traceId, Guid spanId, IList<SpanLog> spanLogs, string span)
         {
             try
             {
-                string lineData = Utils.SpanLogsToLineData(traceId, spanId, spanLogs);
+                string lineData = Utils.SpanLogsToLineData(traceId, spanId, spanLogs, span);
                 spanLogsValid.Inc();
                 _ = tracingProxyConnectionHandler.SendDataAsync(lineData).ContinueWith(
                     task =>

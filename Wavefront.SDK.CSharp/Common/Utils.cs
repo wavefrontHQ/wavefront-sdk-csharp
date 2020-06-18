@@ -360,9 +360,11 @@ namespace Wavefront.SDK.CSharp.Common
         /// <param name="traceId">The unique trace ID for the span.</param>
         /// <param name="spanId">The unique span ID for the span.</param>
         /// <param name="spanLogs">The list of span logs for the span.</param>
+        /// <param name="span">The corresponding span in Wavefront data format.</param>
         public static string SpanLogsToLineData(Guid traceId,
                                                 Guid spanId,
-                                                IList<SpanLog> spanLogs)
+                                                IList<SpanLog> spanLogs,
+                                                string span = null)
         {
             /*
              * Wavefront Span Log Data format
@@ -383,7 +385,7 @@ namespace Wavefront.SDK.CSharp.Common
              *      ]
              *  }
              */
-            var spanLogsObject = new SpanLogs(traceId, spanId, spanLogs);
+            var spanLogsObject = new SpanLogs(traceId, spanId, spanLogs, span);
             var stream = new MemoryStream();
             var serializerSettings = new DataContractJsonSerializerSettings
             {

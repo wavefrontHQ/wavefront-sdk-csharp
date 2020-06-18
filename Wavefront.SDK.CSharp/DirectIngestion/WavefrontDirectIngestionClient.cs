@@ -308,7 +308,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                 // Enqueue span logs for sending only if the span was successfully enqueued
                 if (spanLogs != null && spanLogs.Count > 0)
                 {
-                    SendSpanLogs(traceId, spanId, spanLogs);
+                    SendSpanLogs(traceId, spanId, spanLogs, lineData);
                 }
             }
             else
@@ -322,11 +322,11 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             }
         }
 
-        private void SendSpanLogs(Guid traceId, Guid spanId, IList<SpanLog> spanLogs)
+        private void SendSpanLogs(Guid traceId, Guid spanId, IList<SpanLog> spanLogs, string span)
         {
             try
             {
-                string lineData = Utils.SpanLogsToLineData(traceId, spanId, spanLogs);
+                string lineData = Utils.SpanLogsToLineData(traceId, spanId, spanLogs, span);
                 spanLogsValid.Inc();
                 if (!spanLogsBuffer.TryAdd(lineData))
                 {
