@@ -15,7 +15,7 @@ namespace Wavefront.SDK.CSharp.Common
     public static class Utils
     {
         /// <summary>
-        /// Sanitizes a string to be a valid Wavefront metric name, source, or tag key.
+        /// Sanitizes a string to be a valid Wavefront metric name or tag key.
         /// </summary>
         /// <returns>The sanitized string.</returns>
         /// <param name="s">The string to be sanitized.</param>
@@ -27,9 +27,10 @@ namespace Wavefront.SDK.CSharp.Common
             {
                 char c = s[i];
                 bool isLegal = true;
-                // Legal characters are 44-57 (,-./ and numbers), 65-90 (upper), 97-122 (lower), 95 (_)
-                if (!(44 <= c && c <= 57) && !(65 <= c && c <= 90) && !(97 <= c && c <= 122) &&
-                    c != 95)
+                // Legal characters are 44-46 (,-.), 48-57 (numbers), 65-90 (upper),
+                // 97-122 (lower), 95 (_)
+                if (!(44 <= c && c <= 46) && !(48 <= c && c <= 57) && !(65 <= c && c <= 90) &&
+                    !(97 <= c && c <= 122) && c != 95)
                 {
                     if (!(i == 0 && (c == 0x2206 || c == 0x0394 || c == 126)))
                     {
@@ -45,7 +46,7 @@ namespace Wavefront.SDK.CSharp.Common
         }
 
         /// <summary>
-        /// Sanitizes a string to be a valid Wavefront tag value.
+        /// Sanitizes a string to be a valid Wavefront source or tag value.
         /// </summary>
         /// <returns>The sanitized string.</returns>
         /// <param name="s">The string to be sanitized.</param>
@@ -108,7 +109,7 @@ namespace Wavefront.SDK.CSharp.Common
                 sb.Append(timestamp.Value);
             }
             sb.Append(" source=");
-            sb.Append(Sanitize(source));
+            sb.Append(SanitizeTagValue(source));
             if (tags != null)
             {
                 foreach (var tag in tags)
@@ -215,7 +216,7 @@ namespace Wavefront.SDK.CSharp.Common
                 sb.Append(' ');
                 sb.Append(Sanitize(name));
                 sb.Append(" source=");
-                sb.Append(Sanitize(source));
+                sb.Append(SanitizeTagValue(source));
                 if (tags != null)
                 {
                     foreach (var tag in tags)
@@ -298,7 +299,7 @@ namespace Wavefront.SDK.CSharp.Common
             var sb = new StringBuilder();
             sb.Append(Sanitize(name));
             sb.Append(" source=");
-            sb.Append(Sanitize(source));
+            sb.Append(SanitizeTagValue(source));
             sb.Append(" traceId=");
             sb.Append(traceId);
             sb.Append(" spanId=");
