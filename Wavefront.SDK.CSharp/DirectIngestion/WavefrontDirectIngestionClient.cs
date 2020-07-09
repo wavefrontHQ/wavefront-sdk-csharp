@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Timers;
@@ -182,6 +183,8 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                         .Build();
                 }
 
+                double sdkVersion = Utils.GetSemVer(Assembly.GetExecutingAssembly());
+                client.sdkMetricsRegistry.Gauge("version", () => sdkVersion);
                 client.sdkMetricsRegistry.Gauge("points.queue.size",
                     () => client.metricsBuffer.Count);
                 client.sdkMetricsRegistry.Gauge("points.queue.remaining_capacity",

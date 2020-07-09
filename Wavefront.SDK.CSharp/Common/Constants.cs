@@ -1,4 +1,6 @@
-﻿namespace Wavefront.SDK.CSharp.Common
+﻿using System.Text.RegularExpressions;
+
+namespace Wavefront.SDK.CSharp.Common
 {
     /// <summary>
     /// Class to define all sdk constants
@@ -100,5 +102,11 @@
         /// by Wavefront instrumentation.
         /// </summary>
         public const string WavefrontIgnoreHeader = "X-WF-IGNORE";
+
+        /// <summary>
+        /// Semantic version matcher regex.
+        /// </summary>
+        public static readonly Regex SemverRegex =
+            new Regex("([0-9]\\d*)\\.(\\d+)\\.(\\d+)(?:-([a-zA-Z0-9]+))?");
     }
 }

@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Reflection;
 using System.Runtime.Serialization.Json;
 using System.Text;
+using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using Wavefront.SDK.CSharp.Entities.Histograms;
 using Wavefront.SDK.CSharp.Entities.Tracing;
 
@@ -14,6 +17,7 @@ namespace Wavefront.SDK.CSharp.Common
     /// </summary>
     public static class Utils
     {
+        private static ILogger logger = Logging.LoggerFactory.CreateLogger("Utils");
         /// <summary>
         /// Sanitizes a string to be a valid Wavefront metric name or tag key.
         /// </summary>
@@ -396,6 +400,60 @@ namespace Wavefront.SDK.CSharp.Common
             byte[] json = stream.ToArray();
             stream.Close();
             return Encoding.UTF8.GetString(json, 0, json.Length) + "\n";
+        }
+
+        public static double GetSemVer(Assembly execAssembly)
+        {
+            if (execAssembly != null)
+            {
+                string version = execAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>().InformationalVersion;
+                return GetSemVer(version);
+            }
+            return 0.0D;
+        }
+
+        public static double GetSemVer(String version)
+        {
+            if (!String.IsNullOrEmpty(version))
+            {
+                Match match = Constants.SemverRegex.Match(version);
+                if (match.Success)
+                {
+                    // Major version
+                    StringBuilder sdkVersion = new StringBuilder(match.Groups[1].Value);
+                    sdkVersion.Append(".");
+                    string minor = match.Groups[2].Value;
+                    string patch = match.Groups[3].Value;
+                    
+                    // Minor version
+                    if (minor.Length == 1)
+                    {
+                        sdkVersion.Append("0" + minor);
+                    }
+                    else
+                    {
+                        sdkVersion.Append(minor);
+                    }
+                    // Patch Version
+                    if (patch.Length == 1)
+                    {
+                        sdkVersion.Append("0" + patch);
+                    }
+                    else
+                    {
+                        sdkVersion.Append(patch);
+                    }
+                    try
+                    {
+                        return Double.Parse(sdkVersion.ToString());
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogInformation(ex.Message);
+                    }
+                }
+            }
+            return 0.0D;
         }
 
         /// <summary>

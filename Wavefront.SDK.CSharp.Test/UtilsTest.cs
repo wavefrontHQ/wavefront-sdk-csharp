@@ -404,5 +404,27 @@ namespace Wavefront.SDK.CSharp.Test
                         "}\n", actual);
 #endif
         }
+
+        [Fact]
+        public void TestBuildVersion()
+        {
+            Assert.Equal(0.0D, Utils.GetSemVer(""));
+
+            Assert.Equal(1.0100D, Utils.GetSemVer("1.1.0"));
+
+            Assert.Equal(1.0100D, Utils.GetSemVer("1.1.0-SNAPSHOT"));
+
+            Assert.Equal(1.0101D, Utils.GetSemVer("1.1.1"));
+
+            Assert.Equal(1.1001D, Utils.GetSemVer("1.10.1"));
+
+            Assert.Equal(1.0110D, Utils.GetSemVer("1.1.10"));
+
+            Assert.Equal(1.0001D, Utils.GetSemVer("1.0.1"));
+
+            Assert.Equal(1.0010D, Utils.GetSemVer("1.0.10"));
+
+            Assert.Equal(1.1010D, Utils.GetSemVer("1.10.10"));
+        }
     }
 }
