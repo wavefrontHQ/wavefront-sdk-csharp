@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Timers;
 using Microsoft.Extensions.Logging;
@@ -213,6 +214,9 @@ namespace Wavefront.SDK.CSharp.Proxy
                 client.timer = new Timer(flushIntervalSeconds * 1000);
                 client.timer.Elapsed += client.Run;
                 client.timer.Enabled = true;
+
+                double sdkVersion = Utils.GetSemVer(Assembly.GetExecutingAssembly());
+                client.sdkMetricsRegistry.Gauge("version", () => sdkVersion);
 
                 client.pointsDiscarded = client.sdkMetricsRegistry.Counter("points.discarded");
                 client.pointsValid = client.sdkMetricsRegistry.Counter("points.valid");
