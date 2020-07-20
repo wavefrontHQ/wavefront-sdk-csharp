@@ -1,6 +1,4 @@
-# Wavefront by VMware SDK for C# [![travis build status](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp.svg?branch=master)](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp) [![NuGet](https://img.shields.io/nuget/v/Wavefront.SDK.CSharp.svg)](https://www.nuget.org/packages/Wavefront.SDK.CSharp)
-
-# Welcome to the Wavefront C# SDK
+# Welcome to the Wavefront C# SDK [![travis build status](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp.svg?branch=master)](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp) [![NuGet](https://img.shields.io/nuget/v/Wavefront.SDK.CSharp.svg)](https://www.nuget.org/packages/Wavefront.SDK.CSharp)
 
 Wavefront by VMware C# SDK lets you send raw data from your .NET application to Wavefront an `IWavefrontSender` interface. The data is then stored as metrics, histograms, and trace data. This SDK is also called the Wavefront Sender SDK for C#. 
 
@@ -8,7 +6,7 @@ Although this library is mostly used by the other Wavefront Go SDKs to send data
 
 **Before you start implementing, let us make sure you are using the correct SDK!**
 
-![Go Sender SDK Decision Tree](docs/c#_sender_sdk.png)
+![C# Sender SDK Decision Tree](docs/csharp_sender_sdk.png)
 
 > ***Note***:
 > </br>
@@ -114,6 +112,7 @@ Although this library is mostly used by the other Wavefront Go SDKs to send data
   * .NET Standard (>= 2.0)
 
 * Installation
+  
   Install the [NuGet package](https://www.nuget.org/packages/Wavefront.SDK.CSharp/) using the Package Manager Console or the .NET CLI Console
   
   * Package Manager Console
