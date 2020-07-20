@@ -12,7 +12,7 @@
 
 Wavefront by VMware C# SDK lets you send raw data from your .NET application to Wavefront an `IWavefrontSender` interface. The data is then stored as metrics, histograms, and trace data. This SDK is also called the Wavefront Sender SDK for C#. 
 
-Although this library is mostly used by the other Wavefront Go SDKs to send data to Wavefront, you can also use this SDK directly. For example, you can send data directly from a data store or CSV file to Wavefront.
+Although this library is mostly used by the other Wavefront C# SDKs to send data to Wavefront, you can also use this SDK directly. For example, you can send data directly from a data store or CSV file to Wavefront.
 
 **Before you start implementing, let us make sure you are using the correct SDK!**
 
@@ -20,7 +20,7 @@ Although this library is mostly used by the other Wavefront Go SDKs to send data
 
 > ***Note***:
 > </br>
->   * **This is the Wavefront by VMware SDK for Go (Wavefront Sender SDK for Go)!**
+>   * **This is the Wavefront by VMware SDK for C# (Wavefront Sender SDK for C#)!**
 >   If this SDK is not what you were looking for, see the [table](#wavefront-sdks) below.
 
 
