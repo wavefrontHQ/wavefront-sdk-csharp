@@ -1,39 +1,155 @@
 # Wavefront by VMware SDK for C# [![travis build status](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp.svg?branch=master)](https://travis-ci.com/wavefrontHQ/wavefront-sdk-csharp) [![NuGet](https://img.shields.io/nuget/v/Wavefront.SDK.CSharp.svg)](https://www.nuget.org/packages/Wavefront.SDK.CSharp)
 
-Wavefront by VMware SDK for C# is the core library for sending metrics, histograms and trace data from your .NET application to Wavefront using an `IWavefrontSender` interface.
+## Table of Content
+* [Prerequisites](#Prerequisites)
+* [Set Up an IWavefrontSender](#set-up-an-iwavefrontsender)
+* [Send Data to Wavefront](#send-data-to-wavefront)
+* [Close the IWavefrontSender](#close-the-iwavefrontsender)
+* [License](#License)
+* [How to Get Support and Contribute](#how-to-get-support-and-contribute)
 
-## Frameworks Supported
+# Welcome to the Wavefront C# SDK
+
+Wavefront by VMware C# SDK lets you send raw data from your .NET application to the Wavefront `IWavefrontSender` interface. The data is then stored as metrics, histograms, and trace data. This SDK is also called the Wavefront Sender SDK for C#. 
+
+Although this library is mostly used by the other Wavefront C# SDKs to send data to Wavefront, you can also use this SDK directly. For example, you can send data directly from a data store or CSV file to Wavefront.
+
+**Before you start implementing, let us make sure you are using the correct SDK!**
+
+![C# Sender SDK Decision Tree](docs/csharp_sender_sdk.png)
+
+> ***Note***:
+> </br>
+>   * **This is the Wavefront by VMware SDK for C# (Wavefront Sender SDK for C#)!**
+>   If this SDK is not what you were looking for, see the [table](#wavefront-sdks) below.
+
+
+#### Wavefront SDKs
+<table id="SDKlevels" style="width: 100%">
+<tr>
+  <th width="10%">SDK Type</th>
+  <th width="45%">SDK Description</th>
+  <th width="45%">Supported Languages</th>
+</tr>
+
+<tr>
+  <td><a href="https://docs.wavefront.com/wavefront_sdks.html#sdks-for-collecting-trace-data">OpenTracing SDK</a></td>
+  <td align="justify">Implements the OpenTracing specification. Lets you define, collect, and report custom trace data from any part of your application code. <br>Automatically derives Rate Errors Duration (RED) metrics from the reported spans. </td>
+  <td>
+    <ul>
+    <li>
+      <b>Java</b>: <a href ="https://github.com/wavefrontHQ/wavefront-opentracing-sdk-java">OpenTracing SDK</a> <b>|</b> <a href ="https://github.com/wavefrontHQ/wavefront-opentracing-bundle-java">Tracing Agent</a>
+    </li>
+    <li>
+      <b>Python</b>: <a href ="https://github.com/wavefrontHQ/wavefront-opentracing-sdk-python">OpenTracing SDK</a>
+    </li>
+    <li>
+      <b>Go</b>: <a href ="https://github.com/wavefrontHQ/wavefront-opentracing-sdk-go">OpenTracing SDK</a>
+    </li>
+    <li>
+      <b>.Net/C#</b>: <a href ="https://github.com/wavefrontHQ/wavefront-opentracing-sdk-csharp">OpenTracing SDK</a>
+    </li>
+    </ul>
+  </td>
+</tr>
+
+<tr>
+  <td><a href="https://docs.wavefront.com/wavefront_sdks.html#sdks-for-collecting-metrics-and-histograms">Metrics SDK</a></td>
+  <td align="justify">Implements a standard metrics library. Lets you define, collect, and report custom business metrics and histograms from any part of your application code.   </td>
+  <td>
+    <ul>
+    <li>
+    <b>Java</b>: <a href ="https://github.com/wavefrontHQ/wavefront-dropwizard-metrics-sdk-java">Dropwizard</a> <b>|</b> <a href ="https://github.com/wavefrontHQ/wavefront-runtime-sdk-jvm">JVM</a>
+    </li>
+    <li>
+    <b>Python</b>: <a href ="https://github.com/wavefrontHQ/wavefront-pyformance">Pyformance SDK</a>
+    </li>
+    <li>
+      <b>Go</b>: <a href ="https://github.com/wavefrontHQ/go-metrics-wavefront">Go Metrics SDK</a>
+      </li>
+    <li>
+    <b>.Net/C#</b>: <a href ="https://github.com/wavefrontHQ/wavefront-appmetrics-sdk-csharp">App Metrics SDK</a>
+    </li>
+    </ul>
+  </td>
+</tr>
+
+<tr>
+  <td><a href="https://docs.wavefront.com/wavefront_sdks.html#sdks-that-instrument-frameworks">Framework SDK</a></td>
+  <td align="justify">Reports predefined traces, metrics, and histograms from the APIs of a supported app framework. Lets you get started quickly with minimal code changes.</td>
+  <td>
+    <ul>
+    <li><b>Java</b>:
+    <a href="https://github.com/wavefrontHQ/wavefront-dropwizard-sdk-java">Dropwizard</a> <b>|</b> <a href="https://github.com/wavefrontHQ/wavefront-gRPC-sdk-java">gRPC</a> <b>|</b> <a href="https://github.com/wavefrontHQ/wavefront-jaxrs-sdk-java">JAX-RS</a> <b>|</b> <a href="https://github.com/wavefrontHQ/wavefront-jersey-sdk-java">Jersey</a></li>
+    <li><b>.Net/C#</b>:
+    <a href="https://github.com/wavefrontHQ/wavefront-aspnetcore-sdk-csharp">ASP.Net core</a> </li>
+    <!--- [Python](wavefront_sdks_python.html#python-sdks-that-instrument-frameworks) --->
+    </ul>
+  </td>
+</tr>
+
+<tr>
+  <td><a href="https://docs.wavefront.com/wavefront_sdks.html#sdks-for-sending-raw-data-to-wavefront">Sender SDK</a></td>
+  <td align="justify">Lets you send raw data to Wavefront for storage as metrics, histograms, or traces, e.g., to import CSV data into Wavefront.
+  </td>
+  <td>
+    <ul>
+    <li>
+    <b>Java</b>: <a href ="https://github.com/wavefrontHQ/wavefront-sdk-java">Sender SDK</a>
+    </li>
+    <li>
+    <b>Python</b>: <a href ="https://github.com/wavefrontHQ/wavefront-sdk-python">Sender SDK</a>
+    </li>
+    <li>
+    <b>Go</b>: <a href ="https://github.com/wavefrontHQ/wavefront-sdk-go">Sender SDK</a>
+    </li>
+    <li>
+    <b>.Net/C#</b>: <a href ="https://github.com/wavefrontHQ/wavefront-sdk-csharp">Sender SDK</a>
+    </li>
+    <li>
+    <b>C++</b>: <a href ="https://github.com/wavefrontHQ/wavefront-sdk-cpp">Sender SDK</a>
+    </li>
+    </ul>
+  </td>
+</tr>
+
+</tbody>
+</table>
+
+## Prerequisites
+* Supported Frameworks
   * .NET Framework (>= 4.5.2)
   * .NET Standard (>= 2.0)
 
-## Installation
-Install the [NuGet package](https://www.nuget.org/packages/Wavefront.SDK.CSharp/).
-
-### Package Manager Console
-
-```
-PM> Install-Package Wavefront.SDK.CSharp
-```
-
-### .NET CLI Console
-
-```
-> dotnet add package Wavefront.SDK.CSharp
-```
+* Installation
+  
+  Install the [NuGet package](https://www.nuget.org/packages/Wavefront.SDK.CSharp/) using the Package Manager Console or the .NET CLI Console
+  
+  * Package Manager Console
+      ```
+      PM> Install-Package Wavefront.SDK.CSharp
+      ```
+  * .NET CLI Console
+      ```
+      > dotnet add package Wavefront.SDK.CSharp
+      ```
   
 ## Set Up an IWavefrontSender
-You can choose to send data to Wavefront using either the [Wavefront proxy](https://docs.wavefront.com/proxies.html) or [direct ingestion](https://docs.wavefront.com/direct_ingestion.html).
 
-The `IWavefrontSender` interface has two implementations. Instantiate the implementation that corresponds to your choice:
-* [Create a `WavefrontProxyClient`](#create-a-wavefrontproxyclient) to send data to a Wavefront proxy
-* [Create a `WavefrontDirectIngestionClient`](#create-a-wavefrontdirectingestionclient) to send data directly to a Wavefront service
+You can send metrics, histograms, or trace data from your application to the Wavefront service using a Wavefront proxy or direct ingestions.
+
+* Option 1: Use a [**Wavefront proxy**](https://docs.wavefront.com/proxies.html), which then forwards the data to the Wavefront service. This is the recommended choice for a large-scale deployment that needs resilience to internet outages, control over data queuing and filtering, and more.
+[Create a ProxyConfiguration](#option-1-sending-data-via-the-wavefront-proxy) to send data to a Wavefront proxy.
   
-### Create a WavefrontProxyClient
-To create a WavefrontProxyClient, you specify the proxy host and one or more ports for the proxy to listen on.
+* Use [**direct ingestion**](https://docs.wavefront.com/direct_ingestion.html) to send the data directly to the Wavefront service. This is the simplest way to get up and running quickly.
+[Create a DirectConfiguration](#option-2-sending-data-via-direct-ingestion) to send data directly to a Wavefront service.
+  
+### Option 1: Sending Data via the Wavefront Proxy
 
 Before data can be sent from your application, you must ensure the Wavefront proxy is configured and running:
-* [Install](http://docs.wavefront.com/proxies_installing.html) a Wavefront proxy on the specified proxy host if necessary.
-* [Configure](http://docs.wavefront.com/proxies_configuring.html) the proxy to listen on the specified port(s) by setting the corresponding properties: `pushListenerPorts`, `histogramDistListenerPorts`, `traceListenerPorts`
+* [Install](http://docs.wavefront.com/proxies_installing.html) a Wavefront proxy on the specified proxy host .
+* Make sure you have [Proxies permission](https://docs.wavefront.com/permissions_overview.html) in Wavefront.
+* [Configure](http://docs.wavefront.com/proxies_configuring.html) the proxy to listen to the specified port(s) by setting the corresponding properties: `pushListenerPorts`, `histogramDistListenerPorts`, `traceListenerPorts`
 * Start (or restart) the proxy.
 
 ```csharp
@@ -60,8 +176,9 @@ wfProxyClientBuilder.FlushIntervalSeconds(2);
 IWavefrontSender wavefrontSender = wfProxyClientBuilder.Build();
 ```
 
-### Create a WavefrontDirectIngestionClient
-To create a `WavefrontDirectIngestionClient`, you must have access to a Wavefront instance with direct data ingestion permission:
+### Option 2: Sending Data via Direct Ingestion
+To create a `WavefrontDirectIngestionClient`, you must have access to a Wavefront instance with [Direct Data Ingestion permission](https://docs.wavefront.com/permissions_overview.html):
+
 ```csharp
 // Create a builder with the URL of the form "https://DOMAIN.wavefront.com"
 // and a Wavefront API token with direct ingestion permission
@@ -88,8 +205,11 @@ IWavefrontSender wavefrontSender = wfDirectIngestionClientBuilder.Build();
 ```
 
 ## Send Data to Wavefront
-
- To send data to Wavefront using the `IWavefrontSender` you instantiated:
+ 
+ Wavefront supports different metric types, such as gauges, counters, delta counters, histograms, traces, and spans. See [Metrics](https://docs.wavefront.com/metric_types.html) for details. To send data to Wavefront using `IWavefrontSender` you need to instantiate the following:
+ * [Metrics and Delta Counters](#Metrics-and-Delta-Counters)
+ * [Distributions (Histograms)](#distributions-histograms)
+ * [Tracing Spans](#Tracing-Spans)
 
 ### Metrics and Delta Counters
 
@@ -145,6 +265,9 @@ wavefrontSender.SendDistribution(
 
 ### Tracing Spans
 
+When you use a Sender SDK, you won’t see span-level RED metrics by default unless you use the Wavefront proxy and define a custom tracing port (`TracingPort`). See [Instrument Your Application with Wavefront Sender SDKs](https://docs.wavefront.com/tracing_instrumenting_frameworks.html#instrument-your-application-with-wavefront-sender-sdks) for details.
+
+
 ```csharp
  // Wavefront Tracing Span Data format
  // <tracingSpanName> source=<source> [pointTags] <start_millis> <duration_milliseconds>
@@ -172,7 +295,8 @@ wavefrontSender.SendSpan(
 ```
 
 ## Close the IWavefrontSender
-Remember to flush the buffer and close the sender before shutting down your application.
+Before shutting down your application, flush the buffer and close the sender.
+
 ```csharp
 // If there are any failures observed while sending metrics/histograms/tracing-spans above,
 // you get the total failure count using the below API
@@ -185,3 +309,11 @@ wavefrontSender.Flush();
 // this will flush in-flight buffer and close connection
 wavefrontSender.Close();
 ```
+
+## License
+[Apache 2.0 License](LICENSE).
+
+## How to Get Support and Contribute
+
+* Reach out to us on our public [Slack channel](https://www.wavefront.com/join-public-slack).
+* If you run into any issues, let us know by creating a GitHub issue.
