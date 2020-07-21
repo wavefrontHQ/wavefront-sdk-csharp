@@ -10,7 +10,7 @@
 
 # Welcome to the Wavefront C# SDK
 
-Wavefront by VMware C# SDK lets you send raw data from your .NET application to Wavefront an `IWavefrontSender` interface. The data is then stored as metrics, histograms, and trace data. This SDK is also called the Wavefront Sender SDK for C#. 
+Wavefront by VMware C# SDK lets you send raw data from your .NET application to the Wavefront `IWavefrontSender` interface. The data is then stored as metrics, histograms, and trace data. This SDK is also called the Wavefront Sender SDK for C#. 
 
 Although this library is mostly used by the other Wavefront C# SDKs to send data to Wavefront, you can also use this SDK directly. For example, you can send data directly from a data store or CSV file to Wavefront.
 
@@ -148,6 +148,7 @@ You can send metrics, histograms, or trace data from your application to the Wav
 
 Before data can be sent from your application, you must ensure the Wavefront proxy is configured and running:
 * [Install](http://docs.wavefront.com/proxies_installing.html) a Wavefront proxy on the specified proxy host .
+* Make sure you have [Proxies permission](https://docs.wavefront.com/permissions_overview.html) in Wavefront.
 * [Configure](http://docs.wavefront.com/proxies_configuring.html) the proxy to listen to the specified port(s) by setting the corresponding properties: `pushListenerPorts`, `histogramDistListenerPorts`, `traceListenerPorts`
 * Start (or restart) the proxy.
 
@@ -176,7 +177,7 @@ IWavefrontSender wavefrontSender = wfProxyClientBuilder.Build();
 ```
 
 ### Option 2: Sending Data via Direct Ingestion
-To create a `WavefrontDirectIngestionClient`, you must have access to a Wavefront instance with [direct data ingestion permission](https://docs.wavefront.com/permissions_overview.html):
+To create a `WavefrontDirectIngestionClient`, you must have access to a Wavefront instance with [Direct Data Ingestion permission](https://docs.wavefront.com/permissions_overview.html):
 
 ```csharp
 // Create a builder with the URL of the form "https://DOMAIN.wavefront.com"
