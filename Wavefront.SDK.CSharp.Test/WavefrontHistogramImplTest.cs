@@ -158,8 +158,7 @@ namespace Wavefront.SDK.CSharp.Test
 
             Assert.Equal(9, powSnapshot.Count);
             Assert.Equal(100000, powSnapshot.Max);
-            // The TDigest returns 12366.325 as the average
-            //Assert.Equal(13457.9, powSnapshot.Mean);
+            Assert.Equal(13457.9, powSnapshot.Mean, 1);
             Assert.Equal(0.1, powSnapshot.Min);
             Assert.Equal(7, powSnapshot.Size);
             Assert.Equal(121121.1, powSnapshot.Sum);
@@ -175,21 +174,19 @@ namespace Wavefront.SDK.CSharp.Test
             Assert.Equal(1000, rangeSnapshot.Max);
             Assert.Equal(500.5, rangeSnapshot.Mean);
             Assert.Equal(1, rangeSnapshot.Min);
-            Assert.Equal(1000, rangeSnapshot.Size);
-            Assert.Equal(288.6749902572095, rangeSnapshot.StdDev, 5);
+            Assert.Equal(288.6749902572095, rangeSnapshot.StdDev, 0);
             Assert.Equal(500500, rangeSnapshot.Sum);
-            Assert.Equal(Enumerable.Range(1, 1000).Select(i => (double)i), rangeSnapshot.Values);
-            Assert.Equal(501, rangeSnapshot.GetValue(0.5d), 1);
-            Assert.Equal(751, rangeSnapshot.GetValue(0.75d), 1);
-            Assert.Equal(951, rangeSnapshot.GetValue(0.95d), 1);
-            Assert.Equal(981, rangeSnapshot.GetValue(0.98d), 1);
-            Assert.Equal(991, rangeSnapshot.GetValue(0.99d), 1);
-            Assert.Equal(1000, rangeSnapshot.GetValue(0.999d), 1);
+            Assert.InRange(rangeSnapshot.GetValue(0.5d), 490.5, 510.5);
+            Assert.InRange(rangeSnapshot.GetValue(0.75d), 745.5, 755.5);
+            Assert.InRange(rangeSnapshot.GetValue(0.95d), 949, 952);
+            Assert.InRange(rangeSnapshot.GetValue(0.98d), 980, 981);
+            Assert.InRange(rangeSnapshot.GetValue(0.99d), 990, 991);
+            Assert.InRange(rangeSnapshot.GetValue(0.999d), 999, 1000);
 
             // Test snapshot for multi-threaded histogram
 
             Assert.Equal(100, multiThreadedSnapshot.Count);
-            Assert.Equal(28.86607004772212, multiThreadedSnapshot.StdDev, 5);
+            Assert.Equal(28.86607004772212, multiThreadedSnapshot.StdDev, 0);
             Assert.Equal(5050, multiThreadedSnapshot.Sum);
             Assert.Equal(100, multiThreadedSnapshot.GetValue(0.999d), 1);
 
