@@ -209,15 +209,8 @@ namespace Wavefront.SDK.CSharp.Common
                     sb.Append(' ');
                     sb.Append(timestamp.Value);
                 }
-
-                foreach (var centroid in centroids)
-                {
-                    sb.Append(" #");
-                    sb.Append(centroid.Value);
-                    sb.Append(' ');
-                    sb.Append(centroid.Key);
-                }
                 sb.Append(' ');
+                AppendCompactedCentroids(sb, centroids);
                 sb.Append(Sanitize(name));
                 sb.Append(" source=");
                 sb.Append(SanitizeTagValue(source));
@@ -242,6 +235,38 @@ namespace Wavefront.SDK.CSharp.Common
                 sb.Append('\n');
             }
             return sb.ToString();
+        }
+
+        private static void AppendCompactedCentroids(StringBuilder sb,
+                                                     IList<KeyValuePair<double, int>> centroids)
+        {
+            double? accumulatedValue = null;
+            int accumulatedCount = 0;
+            foreach (var centroid in centroids)
+            {
+                double value = centroid.Key;
+                int count = centroid.Value;
+                if (accumulatedValue.HasValue && accumulatedValue.Value != value)
+                {
+                    sb.Append('#').Append(accumulatedCount).Append(' ');
+                    sb.Append(accumulatedValue.Value).Append(' ');
+                    accumulatedValue = value;
+                    accumulatedCount = count;
+                }
+                else
+                {
+                    if (!accumulatedValue.HasValue)
+                    {
+                        accumulatedValue = value;
+                    }
+                    accumulatedCount += count;
+                }
+            }
+            if (accumulatedValue.HasValue)
+            {
+                sb.Append('#').Append(accumulatedCount).Append(' ');
+                sb.Append(accumulatedValue.Value).Append(' ');
+            }
         }
 
         /// <summary>

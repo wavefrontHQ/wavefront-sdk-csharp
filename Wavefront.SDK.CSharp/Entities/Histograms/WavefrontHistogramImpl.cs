@@ -12,10 +12,16 @@ namespace Wavefront.SDK.CSharp.Entities.Histograms
     public class WavefrontHistogramImpl
     {
         // The accuracy of the TDigest distribution.
-        private static readonly double Accuracy = 1.0 / 100;
+        private static readonly double Accuracy = 1.0 / 32;
 
         // The compression constant of the TDigest distribution.
         private static readonly double Compression = 20;
+
+        /*
+         * Re-compress the centroids when their number exceeeds this bloat factor divided by
+         * Accuracy.
+         */
+        private static readonly double Recompression_Threshold_Factor = 2;
 
         /*
          * If a thread's bin queue has exceeded MaxBins number of bins (e.g., the thread has data
@@ -165,7 +171,11 @@ namespace Wavefront.SDK.CSharp.Entities.Histograms
             {
                 globalHistogramBinsLock.ExitUpgradeableReadLock();
             }
-
+            
+            if (snapshot.CentroidCount > Recompression_Threshold_Factor / Accuracy)
+            {
+                snapshot = Compress(snapshot);
+            }
             return new Snapshot(snapshot);
         }
 
@@ -324,7 +334,20 @@ namespace Wavefront.SDK.CSharp.Entities.Histograms
             /// The average value in the distribution.
             /// </summary>
             /// <value>The average value.</value>
-            public double Mean => distribution.Average;
+            public double Mean
+            {
+                // TODO: use distribution.Average once Average is fixed for TDigest.
+                get
+                {
+                    double value = 0, count = 0;
+                    foreach (var centroid in distribution.GetDistribution())
+                    {
+                        value += centroid.Value * centroid.Count;
+                        count += centroid.Count;
+                    }
+                    return count == 0 ? Double.NaN : value / count;
+                }
+            }
 
             /// <summary>
             /// The smallest value in the distribution.
@@ -346,9 +369,10 @@ namespace Wavefront.SDK.CSharp.Entities.Histograms
             {
                 get
                 {
+                    double mean = Mean;
                     double varianceSum = distribution.GetDistribution().Select(centroid =>
                     {
-                        double diff = centroid.Value - Mean;
+                        double diff = centroid.Value - mean;
                         return diff * diff * centroid.Count;
                     }).Sum();
                     double variance = Count == 0 ? 0 : varianceSum / distribution.Count;
@@ -496,14 +520,46 @@ namespace Wavefront.SDK.CSharp.Entities.Histograms
             /// <returns>The distribution.</returns>
             public Distribution ToDistribution()
             {
-                var centroids = PerThreadDist.Values
-                                             .SelectMany(dist => dist.GetDistribution())
-                                             .Select(centroid => new KeyValuePair<double, int>(
-                                                 centroid.Value, (int)centroid.Count
-                                                ))
-                                             .ToList();
+                TDigest merged = new TDigest(Accuracy, Compression);
+                foreach (TDigest dist in PerThreadDist.Values)
+                {
+                    foreach (DistributionPoint centroid in dist.GetDistribution())
+                    {
+                        merged.Add(centroid.Value, centroid.Count);
+                    }
+                }
+
+                if (merged.CentroidCount > Recompression_Threshold_Factor / Accuracy)
+                {
+                    merged = Compress(merged);
+                }
+
+                var centroids = merged.GetDistribution()
+                                      .Select(centroid => new KeyValuePair<double, int>(
+                                          centroid.Value, (int)centroid.Count
+                                        ))
+                                      .ToList();
                 return new Distribution(MinuteMillis, centroids);
             }
+        }
+
+        /// <summary>
+        ///     Copy of TDigest's private Compress() method.
+        /// </summary>
+        /// <param name="digest"></param>
+        /// <returns></returns>
+        private static TDigest Compress(TDigest digest)
+        {
+            TDigest newTDigest = new TDigest(Accuracy, Compression);
+            List<DistributionPoint> temp = digest.GetDistribution().ToList();
+            temp.Shuffle();
+
+            foreach (DistributionPoint centroid in temp)
+            {
+                newTDigest.Add(centroid.Value, centroid.Count);
+            }
+
+            return newTDigest;
         }
     }
 }

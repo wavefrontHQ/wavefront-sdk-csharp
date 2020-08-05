@@ -78,13 +78,16 @@ namespace Wavefront.SDK.CSharp.Test
         public void TestHistogramToLineData()
         {
             Assert.Equal(
-                "!M 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" " +
+                "!M 1493773500 #12 5.1 #1 12 #45 30 \"request.latency\" source=\"appServer1\" " +
                 "\"region\"=\"us-west\"\n",
                 Utils.HistogramToLineData(
                     "request.latency",
                     ImmutableList.Create(
+                        new KeyValuePair<double, int>(5.1, 10),
+                        new KeyValuePair<double, int>(5.1, 2),
+                        new KeyValuePair<double, int>(12.0, 1),
                         new KeyValuePair<double, int>(30.0, 20),
-                        new KeyValuePair<double, int>(5.1, 10)
+                        new KeyValuePair<double, int>(30.0, 25)
                     ),
                     ImmutableHashSet.Create(HistogramGranularity.Minute), 1493773500L, "appServer1",
                     new Dictionary<string, string>{ { "region", "us-west"} }.ToImmutableDictionary(),
@@ -92,13 +95,16 @@ namespace Wavefront.SDK.CSharp.Test
 
             // null timestamp
             Assert.Equal(
-                "!M #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" " +
+                "!M #12 5.1 #1 12 #45 30 \"request.latency\" source=\"appServer1\" " +
                 "\"region\"=\"us-west\"\n",
                 Utils.HistogramToLineData(
                     "request.latency",
                     ImmutableList.Create(
+                        new KeyValuePair<double, int>(5.1, 10),
+                        new KeyValuePair<double, int>(5.1, 2),
+                        new KeyValuePair<double, int>(12.0, 1),
                         new KeyValuePair<double, int>(30.0, 20),
-                        new KeyValuePair<double, int>(5.1, 10)
+                        new KeyValuePair<double, int>(30.0, 25)
                     ),
                     ImmutableHashSet.Create(HistogramGranularity.Minute), null, "appServer1",
                     new Dictionary<string, string> { { "region", "us-west" } }.ToImmutableDictionary(),
@@ -106,12 +112,15 @@ namespace Wavefront.SDK.CSharp.Test
 
             // null tags
             Assert.Equal(
-                "!M 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\"\n",
+                "!M 1493773500 #12 5.1 #1 12 #45 30 \"request.latency\" source=\"appServer1\"\n",
                 Utils.HistogramToLineData(
                     "request.latency",
                     ImmutableList.Create(
+                        new KeyValuePair<double, int>(5.1, 10),
+                        new KeyValuePair<double, int>(5.1, 2),
+                        new KeyValuePair<double, int>(12.0, 1),
                         new KeyValuePair<double, int>(30.0, 20),
-                        new KeyValuePair<double, int>(5.1, 10)
+                        new KeyValuePair<double, int>(30.0, 25)
                     ),
                     ImmutableHashSet.Create(HistogramGranularity.Minute),
                     1493773500L, "appServer1", null, "defaultSource"));
@@ -127,22 +136,28 @@ namespace Wavefront.SDK.CSharp.Test
             Assert.Throws<ArgumentException>(() => Utils.HistogramToLineData(
                 "request.latency",
                 ImmutableList.Create(
+                    new KeyValuePair<double, int>(5.1, 10),
+                    new KeyValuePair<double, int>(5.1, 2),
+                    new KeyValuePair<double, int>(12.0, 1),
                     new KeyValuePair<double, int>(30.0, 20),
-                    new KeyValuePair<double, int>(5.1, 10)
+                    new KeyValuePair<double, int>(30.0, 25)
                 ),
                 ImmutableHashSet.Create<HistogramGranularity>(),
                 1493773500L, "appServer1", null, "defaultSource"));
 
             // multiple granularities
             Assert.Equal(
-                "!M 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" \"region\"=\"us-west\"\n" +
-                "!H 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" \"region\"=\"us-west\"\n" +
-                "!D 1493773500 #20 30 #10 5.1 \"request.latency\" source=\"appServer1\" \"region\"=\"us-west\"\n",
+                "!M 1493773500 #12 5.1 #1 12 #45 30 \"request.latency\" source=\"appServer1\" \"region\"=\"us-west\"\n" +
+                "!H 1493773500 #12 5.1 #1 12 #45 30 \"request.latency\" source=\"appServer1\" \"region\"=\"us-west\"\n" +
+                "!D 1493773500 #12 5.1 #1 12 #45 30 \"request.latency\" source=\"appServer1\" \"region\"=\"us-west\"\n",
                 Utils.HistogramToLineData(
                     "request.latency",
                     ImmutableList.Create(
+                        new KeyValuePair<double, int>(5.1, 10),
+                        new KeyValuePair<double, int>(5.1, 2),
+                        new KeyValuePair<double, int>(12.0, 1),
                         new KeyValuePair<double, int>(30.0, 20),
-                        new KeyValuePair<double, int>(5.1, 10)
+                        new KeyValuePair<double, int>(30.0, 25)
                     ),
                     ImmutableSortedSet.Create(
                         HistogramGranularity.Minute,
