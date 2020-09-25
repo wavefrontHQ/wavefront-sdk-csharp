@@ -106,14 +106,14 @@ namespace Wavefront.SDK.CSharp.Common.Application
             {
                 foreach (var tag in customTags)
                 {
-                    this.customTags.Add(tag.Key, tag.Value);
+                    this.customTags[tag.Key] = tag.Value;
                 }
                 return this;
             }
 
             /// <summary>
             /// Set additional custom tags from environment variables that match the given pattern.
-            /// For instance: APP* etc.
+            /// For instance: ^APP.*$ matches app_env_1, APP etc.
             /// This setting is optional.
             /// </summary>
             /// <returns><see cref="this"/>.</returns>
@@ -127,7 +127,7 @@ namespace Wavefront.SDK.CSharp.Common.Application
                     if (Regex.Match(variable.Key.ToString(), pattern, RegexOptions.IgnoreCase).Success &&
                         !String.IsNullOrWhiteSpace(variable.Value.ToString()))
                     {
-                        this.customTags.Add(variable.Key.ToString(), variable.Value.ToString());
+                        this.customTags[variable.Key.ToString()] = variable.Value.ToString();
                     }
                 }
                 return this;
@@ -149,7 +149,7 @@ namespace Wavefront.SDK.CSharp.Common.Application
                 string value = Environment.GetEnvironmentVariable(varName);
                 if (!String.IsNullOrWhiteSpace(value))
                 {
-                    this.customTags.Add(tagName, value);
+                    this.customTags[tagName] = value;
                 }
                 return this;
             }

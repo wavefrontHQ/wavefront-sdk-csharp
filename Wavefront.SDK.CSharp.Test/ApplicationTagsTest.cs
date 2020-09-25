@@ -58,14 +58,14 @@ namespace Wavefront.SDK.CSharp.Test
                     { "env", "production" },
                     { "location", "SF" }
                 })
-                .tagsFromEnv("MY*")
+                .tagsFromEnv("^MY.*$")
                 .Build()
                 .ToPointTags();
             Assert.Contains(new KeyValuePair<string, string>("env", "production"), pointTags);
             Assert.Contains(new KeyValuePair<string, string>("location", "SF"), pointTags);
             Assert.Contains(new KeyValuePair<string, string>("my_var1", "var_value1"), pointTags);
             Assert.Contains(new KeyValuePair<string, string>("my_var2", "var_value2"), pointTags);
-            Assert.Contains(new KeyValuePair<string, string>("not_my_var3", "var_value3"), pointTags);
+            Assert.DoesNotContain(new KeyValuePair<string, string>("not_my_var3", "var_value3"), pointTags);
             Assert.DoesNotContain(new KeyValuePair<string, string>("VERSION", "1.0"), pointTags);
         }
 
