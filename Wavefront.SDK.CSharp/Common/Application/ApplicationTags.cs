@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Text.RegularExpressions;
 
 namespace Wavefront.SDK.CSharp.Common.Application
 {
@@ -101,7 +104,53 @@ namespace Wavefront.SDK.CSharp.Common.Application
             /// </param>
             public Builder CustomTags(IDictionary<string, string> customTags)
             {
-                this.customTags = customTags;
+                foreach (var tag in customTags)
+                {
+                    this.customTags[tag.Key] = tag.Value;
+                }
+                return this;
+            }
+
+            /// <summary>
+            /// Set additional custom tags from environment variables that match the given pattern.
+            /// For instance: ^APP.*$ matches app_env_1, APP etc.
+            /// This setting is optional.
+            /// </summary>
+            /// <returns><see cref="this"/>.</returns>
+            /// <param name="pattern">
+            /// Pattern with regular expression.
+            /// </param>
+            public Builder tagsFromEnv(string pattern)
+            {
+                foreach (DictionaryEntry variable in Environment.GetEnvironmentVariables())
+                {
+                    if (Regex.Match(variable.Key.ToString(), pattern, RegexOptions.IgnoreCase).Success &&
+                        !String.IsNullOrWhiteSpace(variable.Value.ToString()))
+                    {
+                        this.customTags[variable.Key.ToString()] = variable.Value.ToString();
+                    }
+                }
+                return this;
+            }
+
+            /// <summary>
+            /// Set a custom tag from the given environment variable.
+            /// This setting is optional.
+            /// </summary>
+            /// <returns><see cref="this"/>.</returns>
+            /// <param name="varName">
+            /// Name of environment variable.
+            /// </param>
+            /// <param name="tagName">
+            /// Name of custom tag.
+            /// </param>
+            public Builder tagFromEnv(string varName, string tagName)
+            {
+                string value = Environment.GetEnvironmentVariable(varName);
+                if (!String.IsNullOrWhiteSpace(value))
+                {
+                    this.customTags[tagName] = value;
+                }
                 return this;
             }
 
