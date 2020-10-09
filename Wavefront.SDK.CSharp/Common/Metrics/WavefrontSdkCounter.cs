@@ -42,6 +42,23 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
         }
 
         /// <summary>
+        /// Decrements the counter by one.
+        /// </summary>
+        public void Dec()
+        {
+            Dec(1);
+        }
+
+        /// <summary>
+        /// Decrements the counter by the specified amount.
+        /// </summary>
+        /// <param name="n">The amount to decrement by.</param>
+        public void Dec(long n)
+        {
+            Interlocked.Add(ref count, -n);
+        }
+
+        /// <summary>
         /// Resets the counter's value to 0.
         /// </summary>
         public void Clear()

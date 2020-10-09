@@ -27,6 +27,12 @@ namespace Wavefront.SDK.CSharp.Common
         {
             var sb = new StringBuilder();
             sb.Append('"');
+            bool isTildaPrefixed = s[0] == 126;
+            bool isDeltaPrefixed = s[0] == 0x2206 || s[0] == 0x0394;
+            bool isDeltaTildaPrefixed = isDeltaPrefixed && s[1] == 126;
+            //Console.Write("string is:{}", s);
+            //Console.Write("istildaPrefixed:{0}, is Delta Prefixed:{1}, isDeltaTildaPrefixed:{2}", isTildaPrefixed, isDeltaPrefixed, isDeltaTildaPrefixed);
+
             for (int i = 0; i < s.Length; i++)
             {
                 char c = s[i];
@@ -36,11 +42,14 @@ namespace Wavefront.SDK.CSharp.Common
                 if (!(44 <= c && c <= 46) && !(48 <= c && c <= 57) && !(65 <= c && c <= 90) &&
                     !(97 <= c && c <= 122) && c != 95)
                 {
-                    if (!(i == 0 && (c == 0x2206 || c == 0x0394 || c == 126)))
+                    if (!(i == 0 && (isDeltaPrefixed|| isTildaPrefixed) ||
+                        (i == 1 && isDeltaTildaPrefixed)))
                     {
                         // First character can also be \u2206 (∆ - INCREMENT)
                         // or \u0394 (Δ - GREEK CAPITAL LETTER DELTA)
                         // or ~ tilda character for internal metrics
+                        // Second character can be ~ tilda character if
+                        // first character is \u2206 or \u0394 
                         isLegal = false;
                     }
                 }

@@ -39,8 +39,8 @@ namespace Wavefront.SDK.CSharp.Proxy
 
             this.sdkMetricsRegistry = sdkMetricsRegistry;
             this.entityPrefix = string.IsNullOrWhiteSpace(entityPrefix) ? "" : entityPrefix + ".";
-            errors = this.sdkMetricsRegistry.Counter(this.entityPrefix + "errors");
-            connectErrors = this.sdkMetricsRegistry.Counter(this.entityPrefix + "connect.errors");
+            errors = this.sdkMetricsRegistry.DeltaCounter(this.entityPrefix + "errors");
+            connectErrors = this.sdkMetricsRegistry.DeltaCounter(this.entityPrefix + "connect.errors");
         }
 
         /// <summary>
