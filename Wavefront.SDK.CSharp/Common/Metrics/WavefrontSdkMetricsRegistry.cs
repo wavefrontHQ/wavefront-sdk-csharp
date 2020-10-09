@@ -152,7 +152,7 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
         {
         }
 
-        private void Run(object sender, ElapsedEventArgs e)
+        internal void Run(object sender, ElapsedEventArgs e)
         {
             long timestamp = DateTimeUtils.UnixTimeMilliseconds(DateTime.UtcNow);
             foreach (var entry in metrics)

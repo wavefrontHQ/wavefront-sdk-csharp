@@ -49,7 +49,7 @@ namespace Wavefront.SDK.CSharp.Common
                         // or \u0394 (Δ - GREEK CAPITAL LETTER DELTA)
                         // or ~ tilda character for internal metrics
                         // Second character can be ~ tilda character if
-                        // first character is \u2206 or \u0394 
+                        // first character is \u2206 or \u0394
                         isLegal = false;
                     }
                 }
