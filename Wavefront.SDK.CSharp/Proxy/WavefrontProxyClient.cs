@@ -28,28 +28,28 @@ namespace Wavefront.SDK.CSharp.Proxy
         private WavefrontSdkMetricsRegistry sdkMetricsRegistry;
 
         // Internal point metrics
-        private WavefrontSdkCounter pointsDiscarded;
-        private WavefrontSdkCounter pointsValid;
-        private WavefrontSdkCounter pointsInvalid;
-        private WavefrontSdkCounter pointsDropped;
+        private WavefrontSdkDeltaCounter pointsDiscarded;
+        private WavefrontSdkDeltaCounter pointsValid;
+        private WavefrontSdkDeltaCounter pointsInvalid;
+        private WavefrontSdkDeltaCounter pointsDropped;
 
         // Internal histogram metrics
-        private WavefrontSdkCounter histogramsDiscarded;
-        private WavefrontSdkCounter histogramsValid;
-        private WavefrontSdkCounter histogramsInvalid;
-        private WavefrontSdkCounter histogramsDropped;
+        private WavefrontSdkDeltaCounter histogramsDiscarded;
+        private WavefrontSdkDeltaCounter histogramsValid;
+        private WavefrontSdkDeltaCounter histogramsInvalid;
+        private WavefrontSdkDeltaCounter histogramsDropped;
 
         // Internal tracing span metrics
-        private WavefrontSdkCounter spansDiscarded;
-        private WavefrontSdkCounter spansValid;
-        private WavefrontSdkCounter spansInvalid;
-        private WavefrontSdkCounter spansDropped;
+        private WavefrontSdkDeltaCounter spansDiscarded;
+        private WavefrontSdkDeltaCounter spansValid;
+        private WavefrontSdkDeltaCounter spansInvalid;
+        private WavefrontSdkDeltaCounter spansDropped;
 
         // Internal span log metrics
-        private WavefrontSdkCounter spanLogsDiscarded;
-        private WavefrontSdkCounter spanLogsValid;
-        private WavefrontSdkCounter spanLogsInvalid;
-        private WavefrontSdkCounter spanLogsDropped;
+        private WavefrontSdkDeltaCounter spanLogsDiscarded;
+        private WavefrontSdkDeltaCounter spanLogsValid;
+        private WavefrontSdkDeltaCounter spanLogsInvalid;
+        private WavefrontSdkDeltaCounter spanLogsDropped;
 
         // Source to use if entity source is null
         private readonly string defaultSource = Utils.GetDefaultSource();

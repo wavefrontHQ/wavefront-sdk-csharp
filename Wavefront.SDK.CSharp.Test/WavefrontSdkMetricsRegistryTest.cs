@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Timers;
-using Wavefront.SDK.CSharp.Common;
 using Wavefront.SDK.CSharp.Common.Metrics;
 using Wavefront.SDK.CSharp.Entities.Metrics;
 using Xunit;

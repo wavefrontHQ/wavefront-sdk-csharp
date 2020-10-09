@@ -1,4 +1,3 @@
-using System.Threading;
 
 namespace Wavefront.SDK.CSharp.Common.Metrics
 {

@@ -20,8 +20,8 @@ namespace Wavefront.SDK.CSharp.Proxy
 
         private readonly WavefrontSdkMetricsRegistry sdkMetricsRegistry;
         private readonly string entityPrefix;
-        private readonly WavefrontSdkCounter errors;
-        private readonly WavefrontSdkCounter connectErrors;
+        private readonly WavefrontSdkDeltaCounter errors;
+        private readonly WavefrontSdkDeltaCounter connectErrors;
 
         protected internal ProxyConnectionHandler(string host, int port,
             WavefrontSdkMetricsRegistry sdkMetricsRegistry, string entityPrefix)
