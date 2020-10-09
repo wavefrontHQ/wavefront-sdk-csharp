@@ -19,9 +19,14 @@ namespace Wavefront.SDK.CSharp.Common
 #if NET452 || NET46
                     loggerFactory = new LoggerFactory();
                     loggerFactory.AddDebug();
+                    loggerFactory.AddConsole();
 #else
                     loggerFactory = new ServiceCollection()
-                        .AddLogging(builder => builder.AddDebug())
+                        .AddLogging(builder =>
+                        {
+                            builder.AddDebug();
+                            builder.AddConsole();
+                        })
                         .BuildServiceProvider()
                         .GetService<ILoggerFactory>();
 #endif
