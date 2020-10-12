@@ -384,7 +384,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                 using (var stream = BatchToStream(batch))
                 {
                     int statusCode = directService.Report(format, stream);
-                    sdkMetricsRegistry.Counter(entityPrefix + ".report." + statusCode).Inc();
+                    sdkMetricsRegistry.DeltaCounter(entityPrefix + ".report." + statusCode).Inc();
                     if ((statusCode >= 400 && statusCode < 600) || statusCode == Constants.HttpNoResponse)
                     {
                         switch (statusCode)
