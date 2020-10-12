@@ -208,7 +208,6 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
             return GetOrAdd(name, new WavefrontSdkCounter());
         }
 
-
         /// <summary>
         /// Returns the delta counter registered under the given name. If no metric is registered
         /// under this name, create and register a new delta counter.
@@ -219,7 +218,6 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
         {
             return GetOrAdd(name, new WavefrontSdkDeltaCounter());
         }
-
 
         private T GetOrAdd<T>(string name, T metric) where T : IWavefrontSdkMetric
         {

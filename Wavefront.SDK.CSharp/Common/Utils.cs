@@ -30,9 +30,6 @@ namespace Wavefront.SDK.CSharp.Common
             bool isTildaPrefixed = s[0] == 126;
             bool isDeltaPrefixed = s[0] == 0x2206 || s[0] == 0x0394;
             bool isDeltaTildaPrefixed = isDeltaPrefixed && s[1] == 126;
-            //Console.Write("string is:{}", s);
-            //Console.Write("istildaPrefixed:{0}, is Delta Prefixed:{1}, isDeltaTildaPrefixed:{2}", isTildaPrefixed, isDeltaPrefixed, isDeltaTildaPrefixed);
-
             for (int i = 0; i < s.Length; i++)
             {
                 char c = s[i];
