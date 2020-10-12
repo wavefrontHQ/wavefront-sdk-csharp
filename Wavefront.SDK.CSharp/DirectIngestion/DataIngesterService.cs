@@ -73,12 +73,22 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
             catch (IOException)
             {
             }
+            catch (WebException we)
+            {
+                response = (HttpWebResponse)we.Response;
+            }
 
-            int statusCode = (int)HttpStatusCode.BadRequest;
+            int statusCode = Constants.HttpNoResponse;
             if (response != null)
             {
                 statusCode = (int)response.StatusCode;
-                response.Close();
+                try
+                {
+                    response.Close();
+                }
+                catch (ObjectDisposedException)
+                {
+                }
             }
             return statusCode;
         }
