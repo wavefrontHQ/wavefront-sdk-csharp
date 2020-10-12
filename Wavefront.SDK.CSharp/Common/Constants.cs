@@ -108,5 +108,10 @@ namespace Wavefront.SDK.CSharp.Common
         /// </summary>
         public static readonly Regex SemverRegex =
             new Regex("([0-9]\\d*)\\.(\\d+)\\.(\\d+)(?:-([a-zA-Z0-9]+))?");
+
+        /// <summary>
+        /// Default http status code for sending points.
+        /// </summary>
+        public static readonly int HttpNoResponse = -1;
     }
 }

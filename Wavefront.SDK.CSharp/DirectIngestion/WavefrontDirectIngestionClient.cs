@@ -385,22 +385,51 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                 {
                     int statusCode = directService.Report(format, stream);
                     sdkMetricsRegistry.Counter(entityPrefix + ".report." + statusCode).Inc();
-                    if (statusCode >= 400 && statusCode < 600)
+                    if ((statusCode >= 400 && statusCode < 600) || statusCode == Constants.HttpNoResponse)
                     {
-                        logger.LogWarning("Error reporting points, respStatus=" + statusCode);
-                        int numAddedBackToBuffer = 0;
-                        foreach (var item in batch)
+                        switch (statusCode)
                         {
-                            if (buffer.TryAdd(item))
-                            {
-                                numAddedBackToBuffer++;
-                            }
-                            else
-                            {
-                                dropped.Inc(batch.Count - numAddedBackToBuffer);
-                                logger.LogWarning("Buffer full, dropping attempted points");
-                                return;
-                            }
+                            case 401:
+                                logger.LogWarning("Error sending " + entityPrefix + " to Wavefront (HTTP " + statusCode + "). " +
+                                                "Please verify that your API Token is correct! All " + entityPrefix + " are " +
+                                                "discarded.");
+                                dropped.Inc(batch.Count);
+                                break;
+                            case 403:
+                                if (format.Equals(Constants.WavefrontMetricFormat))
+                                {
+                                    logger.LogWarning("Error sending " + entityPrefix + " to Wavefront (HTTP " + statusCode + "). " +
+                                                    "Please verify that Direct Data Ingestion is enabled for your account! " +
+                                                    "All " + entityPrefix + " are discarded.");
+                                }
+                                else
+                                {
+                                    logger.LogWarning("Error sending " + entityPrefix + " to Wavefront (HTTP " + statusCode + "). " +
+                                                    "Please verify that Direct Data Ingestion and " + entityPrefix + " are " +
+                                                    "enabled for your account! All " + entityPrefix + " are discarded.");
+                                }
+                                dropped.Inc(batch.Count);
+                                break;
+                            default:
+                                logger.LogWarning("Error sending " + entityPrefix + " to Wavefront (HTTP " + statusCode + "). Data " +
+                                                    "will be requeued and resent.");
+                                int numAddedBackToBuffer = 0;
+                                foreach (var item in batch)
+                                {
+                                    if (buffer.TryAdd(item))
+                                    {
+                                        numAddedBackToBuffer++;
+                                    }
+                                    else
+                                    {
+                                        int numDropped = batch.Count - numAddedBackToBuffer;
+                                        dropped.Inc(numDropped);
+                                        logger.LogWarning("Buffer full, dropping " + numDropped + " " + entityPrefix + ". Consider increasing " +
+                                                        "the batch size of your sender to increase throughput.");
+                                        break;
+                                    }
+                                }
+                                break;
                         }
                     }
                 }
