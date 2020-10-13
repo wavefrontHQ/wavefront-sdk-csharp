@@ -33,30 +33,30 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
         private Timer timer;
 
         private WavefrontSdkMetricsRegistry sdkMetricsRegistry;
-        
+
         // Internal point metrics
-        private WavefrontSdkCounter pointsValid;
-        private WavefrontSdkCounter pointsInvalid;
-        private WavefrontSdkCounter pointsDropped;
-        private WavefrontSdkCounter pointReportErrors;
+        private WavefrontSdkDeltaCounter pointsValid;
+        private WavefrontSdkDeltaCounter pointsInvalid;
+        private WavefrontSdkDeltaCounter pointsDropped;
+        private WavefrontSdkDeltaCounter pointReportErrors;
 
         // Internal histogram metrics
-        private WavefrontSdkCounter histogramsValid;
-        private WavefrontSdkCounter histogramsInvalid;
-        private WavefrontSdkCounter histogramsDropped;
-        private WavefrontSdkCounter histogramReportErrors;
+        private WavefrontSdkDeltaCounter histogramsValid;
+        private WavefrontSdkDeltaCounter histogramsInvalid;
+        private WavefrontSdkDeltaCounter histogramsDropped;
+        private WavefrontSdkDeltaCounter histogramReportErrors;
 
         // Internal tracing span metrics
-        private WavefrontSdkCounter spansValid;
-        private WavefrontSdkCounter spansInvalid;
-        private WavefrontSdkCounter spansDropped;
-        private WavefrontSdkCounter spanReportErrors;
+        private WavefrontSdkDeltaCounter spansValid;
+        private WavefrontSdkDeltaCounter spansInvalid;
+        private WavefrontSdkDeltaCounter spansDropped;
+        private WavefrontSdkDeltaCounter spanReportErrors;
 
         // Internal span log metrics
-        private WavefrontSdkCounter spanLogsValid;
-        private WavefrontSdkCounter spanLogsInvalid;
-        private WavefrontSdkCounter spanLogsDropped;
-        private WavefrontSdkCounter spanLogReportErrors;
+        private WavefrontSdkDeltaCounter spanLogsValid;
+        private WavefrontSdkDeltaCounter spanLogsInvalid;
+        private WavefrontSdkDeltaCounter spanLogsDropped;
+        private WavefrontSdkDeltaCounter spanLogReportErrors;
 
         public class Builder
         {
@@ -189,41 +189,41 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                     () => client.metricsBuffer.Count);
                 client.sdkMetricsRegistry.Gauge("points.queue.remaining_capacity",
                     () => client.metricsBuffer.BoundedCapacity - client.metricsBuffer.Count);
-                client.pointsValid = client.sdkMetricsRegistry.Counter("points.valid");
-                client.pointsInvalid = client.sdkMetricsRegistry.Counter("points.invalid");
-                client.pointsDropped = client.sdkMetricsRegistry.Counter("points.dropped");
+                client.pointsValid = client.sdkMetricsRegistry.DeltaCounter("points.valid");
+                client.pointsInvalid = client.sdkMetricsRegistry.DeltaCounter("points.invalid");
+                client.pointsDropped = client.sdkMetricsRegistry.DeltaCounter("points.dropped");
                 client.pointReportErrors =
-                    client.sdkMetricsRegistry.Counter("points.report.errors");
+                    client.sdkMetricsRegistry.DeltaCounter("points.report.errors");
 
                 client.sdkMetricsRegistry.Gauge("histograms.queue.size",
                     () => client.histogramsBuffer.Count);
                 client.sdkMetricsRegistry.Gauge("histograms.queue.remaining_capacity",
                     () => client.histogramsBuffer.BoundedCapacity - client.histogramsBuffer.Count);
-                client.histogramsValid = client.sdkMetricsRegistry.Counter("histograms.valid");
-                client.histogramsInvalid = client.sdkMetricsRegistry.Counter("histograms.invalid");
-                client.histogramsDropped = client.sdkMetricsRegistry.Counter("histograms.dropped");
+                client.histogramsValid = client.sdkMetricsRegistry.DeltaCounter("histograms.valid");
+                client.histogramsInvalid = client.sdkMetricsRegistry.DeltaCounter("histograms.invalid");
+                client.histogramsDropped = client.sdkMetricsRegistry.DeltaCounter("histograms.dropped");
                 client.histogramReportErrors =
-                    client.sdkMetricsRegistry.Counter("histograms.report.errors");
+                    client.sdkMetricsRegistry.DeltaCounter("histograms.report.errors");
 
                 client.sdkMetricsRegistry.Gauge("spans.queue.size",
                     () => client.tracingSpansBuffer.Count);
                 client.sdkMetricsRegistry.Gauge("spans.queue.remaining_capacity",
                     () => client.tracingSpansBuffer.BoundedCapacity - client.tracingSpansBuffer.Count);
-                client.spansValid = client.sdkMetricsRegistry.Counter("spans.valid");
-                client.spansInvalid = client.sdkMetricsRegistry.Counter("spans.invalid");
-                client.spansDropped = client.sdkMetricsRegistry.Counter("spans.dropped");
+                client.spansValid = client.sdkMetricsRegistry.DeltaCounter("spans.valid");
+                client.spansInvalid = client.sdkMetricsRegistry.DeltaCounter("spans.invalid");
+                client.spansDropped = client.sdkMetricsRegistry.DeltaCounter("spans.dropped");
                 client.spanReportErrors =
-                    client.sdkMetricsRegistry.Counter("spans.report.errors");
+                    client.sdkMetricsRegistry.DeltaCounter("spans.report.errors");
 
                 client.sdkMetricsRegistry.Gauge("span_logs.queue.size",
                     () => client.spanLogsBuffer.Count);
                 client.sdkMetricsRegistry.Gauge("span_logs.queue.remaining_capacity",
                     () => client.spanLogsBuffer.BoundedCapacity - client.spanLogsBuffer.Count);
-                client.spanLogsValid = client.sdkMetricsRegistry.Counter("span_logs.valid");
-                client.spanLogsInvalid = client.sdkMetricsRegistry.Counter("span_logs.invalid");
-                client.spanLogsDropped = client.sdkMetricsRegistry.Counter("span_logs.dropped");
+                client.spanLogsValid = client.sdkMetricsRegistry.DeltaCounter("span_logs.valid");
+                client.spanLogsInvalid = client.sdkMetricsRegistry.DeltaCounter("span_logs.invalid");
+                client.spanLogsDropped = client.sdkMetricsRegistry.DeltaCounter("span_logs.dropped");
                 client.spanLogReportErrors =
-                    client.sdkMetricsRegistry.Counter("span_logs.report.errors");
+                    client.sdkMetricsRegistry.DeltaCounter("span_logs.report.errors");
 
                 return client;
             }
@@ -371,7 +371,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
         }
 
         private void InternalFlush(BlockingCollection<string> buffer, string format,
-            string entityPrefix, WavefrontSdkCounter dropped, WavefrontSdkCounter reportErrors)
+            string entityPrefix, WavefrontSdkDeltaCounter dropped, WavefrontSdkDeltaCounter reportErrors)
         {
             var batch = GetBatch(buffer);
             if (batch.Count == 0)
@@ -384,7 +384,7 @@ namespace Wavefront.SDK.CSharp.DirectIngestion
                 using (var stream = BatchToStream(batch))
                 {
                     int statusCode = directService.Report(format, stream);
-                    sdkMetricsRegistry.Counter(entityPrefix + ".report." + statusCode).Inc();
+                    sdkMetricsRegistry.DeltaCounter(entityPrefix + ".report." + statusCode).Inc();
                     if ((statusCode >= 400 && statusCode < 600) || statusCode == Constants.HttpNoResponse)
                     {
                         switch (statusCode)

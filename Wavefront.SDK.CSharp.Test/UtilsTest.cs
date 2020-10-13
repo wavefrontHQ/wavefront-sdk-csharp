@@ -26,6 +26,8 @@ namespace Wavefront.SDK.CSharp.Test
             Assert.Equal("\"-component.heartbeat\"", Utils.Sanitize("!component.heartbeat"));
             Assert.Equal("\"Δcomponent.heartbeat\"", Utils.Sanitize("Δcomponent.heartbeat"));
             Assert.Equal("\"∆component.heartbeat\"", Utils.Sanitize("∆component.heartbeat"));
+            Assert.Equal("\"~-component.heartbeat\"", Utils.Sanitize("~∆component.heartbeat"));
+            Assert.Equal("\"∆~component.heartbeat\"", Utils.Sanitize("∆~component.heartbeat"));
         }
 
         [Fact]

@@ -28,28 +28,28 @@ namespace Wavefront.SDK.CSharp.Proxy
         private WavefrontSdkMetricsRegistry sdkMetricsRegistry;
 
         // Internal point metrics
-        private WavefrontSdkCounter pointsDiscarded;
-        private WavefrontSdkCounter pointsValid;
-        private WavefrontSdkCounter pointsInvalid;
-        private WavefrontSdkCounter pointsDropped;
+        private WavefrontSdkDeltaCounter pointsDiscarded;
+        private WavefrontSdkDeltaCounter pointsValid;
+        private WavefrontSdkDeltaCounter pointsInvalid;
+        private WavefrontSdkDeltaCounter pointsDropped;
 
         // Internal histogram metrics
-        private WavefrontSdkCounter histogramsDiscarded;
-        private WavefrontSdkCounter histogramsValid;
-        private WavefrontSdkCounter histogramsInvalid;
-        private WavefrontSdkCounter histogramsDropped;
+        private WavefrontSdkDeltaCounter histogramsDiscarded;
+        private WavefrontSdkDeltaCounter histogramsValid;
+        private WavefrontSdkDeltaCounter histogramsInvalid;
+        private WavefrontSdkDeltaCounter histogramsDropped;
 
         // Internal tracing span metrics
-        private WavefrontSdkCounter spansDiscarded;
-        private WavefrontSdkCounter spansValid;
-        private WavefrontSdkCounter spansInvalid;
-        private WavefrontSdkCounter spansDropped;
+        private WavefrontSdkDeltaCounter spansDiscarded;
+        private WavefrontSdkDeltaCounter spansValid;
+        private WavefrontSdkDeltaCounter spansInvalid;
+        private WavefrontSdkDeltaCounter spansDropped;
 
         // Internal span log metrics
-        private WavefrontSdkCounter spanLogsDiscarded;
-        private WavefrontSdkCounter spanLogsValid;
-        private WavefrontSdkCounter spanLogsInvalid;
-        private WavefrontSdkCounter spanLogsDropped;
+        private WavefrontSdkDeltaCounter spanLogsDiscarded;
+        private WavefrontSdkDeltaCounter spanLogsValid;
+        private WavefrontSdkDeltaCounter spanLogsInvalid;
+        private WavefrontSdkDeltaCounter spanLogsDropped;
 
         // Source to use if entity source is null
         private readonly string defaultSource = Utils.GetDefaultSource();
@@ -218,25 +218,25 @@ namespace Wavefront.SDK.CSharp.Proxy
                 double sdkVersion = Utils.GetSemVer(Assembly.GetExecutingAssembly());
                 client.sdkMetricsRegistry.Gauge("version", () => sdkVersion);
 
-                client.pointsDiscarded = client.sdkMetricsRegistry.Counter("points.discarded");
-                client.pointsValid = client.sdkMetricsRegistry.Counter("points.valid");
-                client.pointsInvalid = client.sdkMetricsRegistry.Counter("points.invalid");
-                client.pointsDropped = client.sdkMetricsRegistry.Counter("points.dropped");
+                client.pointsDiscarded = client.sdkMetricsRegistry.DeltaCounter("points.discarded");
+                client.pointsValid = client.sdkMetricsRegistry.DeltaCounter("points.valid");
+                client.pointsInvalid = client.sdkMetricsRegistry.DeltaCounter("points.invalid");
+                client.pointsDropped = client.sdkMetricsRegistry.DeltaCounter("points.dropped");
 
-                client.histogramsDiscarded = client.sdkMetricsRegistry.Counter("histograms.discarded");
-                client.histogramsValid = client.sdkMetricsRegistry.Counter("histograms.valid");
-                client.histogramsInvalid = client.sdkMetricsRegistry.Counter("histograms.invalid");
-                client.histogramsDropped = client.sdkMetricsRegistry.Counter("histograms.dropped");
+                client.histogramsDiscarded = client.sdkMetricsRegistry.DeltaCounter("histograms.discarded");
+                client.histogramsValid = client.sdkMetricsRegistry.DeltaCounter("histograms.valid");
+                client.histogramsInvalid = client.sdkMetricsRegistry.DeltaCounter("histograms.invalid");
+                client.histogramsDropped = client.sdkMetricsRegistry.DeltaCounter("histograms.dropped");
 
-                client.spansDiscarded = client.sdkMetricsRegistry.Counter("spans.discarded");
-                client.spansValid = client.sdkMetricsRegistry.Counter("spans.valid");
-                client.spansInvalid = client.sdkMetricsRegistry.Counter("spans.invalid");
-                client.spansDropped = client.sdkMetricsRegistry.Counter("spans.dropped");
+                client.spansDiscarded = client.sdkMetricsRegistry.DeltaCounter("spans.discarded");
+                client.spansValid = client.sdkMetricsRegistry.DeltaCounter("spans.valid");
+                client.spansInvalid = client.sdkMetricsRegistry.DeltaCounter("spans.invalid");
+                client.spansDropped = client.sdkMetricsRegistry.DeltaCounter("spans.dropped");
 
-                client.spanLogsDiscarded = client.sdkMetricsRegistry.Counter("spans_logs.discarded");
-                client.spanLogsValid = client.sdkMetricsRegistry.Counter("span_logs.valid");
-                client.spanLogsInvalid = client.sdkMetricsRegistry.Counter("span_logs.invalid");
-                client.spanLogsDropped = client.sdkMetricsRegistry.Counter("span_logs.dropped");
+                client.spanLogsDiscarded = client.sdkMetricsRegistry.DeltaCounter("spans_logs.discarded");
+                client.spanLogsValid = client.sdkMetricsRegistry.DeltaCounter("span_logs.valid");
+                client.spanLogsInvalid = client.sdkMetricsRegistry.DeltaCounter("span_logs.invalid");
+                client.spanLogsDropped = client.sdkMetricsRegistry.DeltaCounter("span_logs.dropped");
 
                 return client;
             }

@@ -49,5 +49,23 @@ namespace Wavefront.SDK.CSharp.Entities.Metrics
             }
             sender.SendMetric(name, value, null, source, tags);
         }
+
+        public static void SendDeltaCounter(this IWavefrontMetricSender sender,
+                                           string name, double value, long? timestamp,
+                                           string source, IDictionary<string, string> tags)
+        {
+            if (value <= 0)
+            {
+                // Delta counters cannot be non-positive
+                return;
+            }
+
+            if (!name.StartsWith(Constants.DeltaPrefix, StringComparison.Ordinal) &&
+                !name.StartsWith(Constants.DeltaPrefix2, StringComparison.Ordinal))
+            {
+                name = Constants.DeltaPrefix + name;
+            }
+            sender.SendMetric(name, value, null, source, tags);
+        }
     }
 }

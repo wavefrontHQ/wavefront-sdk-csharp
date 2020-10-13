@@ -152,7 +152,7 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
         {
         }
 
-        private void Run(object sender, ElapsedEventArgs e)
+        internal void Run(object sender, ElapsedEventArgs e)
         {
             long timestamp = DateTimeUtils.UnixTimeMilliseconds(DateTime.UtcNow);
             foreach (var entry in metrics)
@@ -165,6 +165,12 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
                     {
                         wavefrontMetricSender?.SendMetric(name,
                             ((WavefrontSdkGauge)metric).Value, timestamp, source, tags);
+                    }
+                    else if (metric is WavefrontSdkDeltaCounter)
+                    {
+                        long delta_count = ((WavefrontSdkDeltaCounter)metric).Count;
+                        wavefrontMetricSender?.SendDeltaCounter(name + ".count", delta_count, timestamp, source, tags);
+                        ((WavefrontSdkDeltaCounter)metric).Dec(delta_count);
                     }
                     else if (metric is WavefrontSdkCounter)
                     {
@@ -200,6 +206,17 @@ namespace Wavefront.SDK.CSharp.Common.Metrics
         public WavefrontSdkCounter Counter(string name)
         {
             return GetOrAdd(name, new WavefrontSdkCounter());
+        }
+
+        /// <summary>
+        /// Returns the delta counter registered under the given name. If no metric is registered
+        /// under this name, create and register a new delta counter.
+        /// </summary>
+        /// <param name="name">The metric name.</param>
+        /// <returns>A new or pre-existing counter.</returns>
+        public WavefrontSdkDeltaCounter DeltaCounter(string name)
+        {
+            return GetOrAdd(name, new WavefrontSdkDeltaCounter());
         }
 
         private T GetOrAdd<T>(string name, T metric) where T : IWavefrontSdkMetric

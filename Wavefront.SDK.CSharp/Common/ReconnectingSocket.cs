@@ -27,12 +27,12 @@ namespace Wavefront.SDK.CSharp.Common
         private volatile Stream socketOutputStream;
         private volatile SemaphoreSlim connectSemaphore = new SemaphoreSlim(1);
 
-        private readonly WavefrontSdkCounter writeSuccesses;
-        private readonly WavefrontSdkCounter writeErrors;
-        private readonly WavefrontSdkCounter flushSuccesses;
-        private readonly WavefrontSdkCounter flushErrors;
-        private readonly WavefrontSdkCounter resetSuccesses;
-        private readonly WavefrontSdkCounter resetErrors;
+        private readonly WavefrontSdkDeltaCounter writeSuccesses;
+        private readonly WavefrontSdkDeltaCounter writeErrors;
+        private readonly WavefrontSdkDeltaCounter flushSuccesses;
+        private readonly WavefrontSdkDeltaCounter flushErrors;
+        private readonly WavefrontSdkDeltaCounter resetSuccesses;
+        private readonly WavefrontSdkDeltaCounter resetErrors;
 
         /// <summary>
         /// Initializes a new instance of the
@@ -62,12 +62,12 @@ namespace Wavefront.SDK.CSharp.Common
                 throw new ArgumentNullException(nameof(loggerFactory));
 
             entityPrefix = string.IsNullOrWhiteSpace(entityPrefix) ? "" : entityPrefix + ".";
-            writeSuccesses = sdkMetricsRegistry.Counter(entityPrefix + "write.success");
-            writeErrors = sdkMetricsRegistry.Counter(entityPrefix + "write.errors");
-            flushSuccesses = sdkMetricsRegistry.Counter(entityPrefix + "flush.success");
-            flushErrors = sdkMetricsRegistry.Counter(entityPrefix + "flush.errors");
-            resetSuccesses = sdkMetricsRegistry.Counter(entityPrefix + "reset.success");
-            resetErrors = sdkMetricsRegistry.Counter(entityPrefix + "reset.errors");
+            writeSuccesses = sdkMetricsRegistry.DeltaCounter(entityPrefix + "write.success");
+            writeErrors = sdkMetricsRegistry.DeltaCounter(entityPrefix + "write.errors");
+            flushSuccesses = sdkMetricsRegistry.DeltaCounter(entityPrefix + "flush.success");
+            flushErrors = sdkMetricsRegistry.DeltaCounter(entityPrefix + "flush.errors");
+            resetSuccesses = sdkMetricsRegistry.DeltaCounter(entityPrefix + "reset.success");
+            resetErrors = sdkMetricsRegistry.DeltaCounter(entityPrefix + "reset.errors");
 
             client = new TcpClient
             {
