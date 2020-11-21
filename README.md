@@ -288,6 +288,7 @@ wavefrontSender.SendSpan(
     null,
     ImmutableList.Create(
         new KeyValuePair<string, string>("application", "Wavefront"),
+        new KeyValuePair<string, string>("service", "istio"),
         new KeyValuePair<string, string>("http.method", "GET")
     ),
     null
