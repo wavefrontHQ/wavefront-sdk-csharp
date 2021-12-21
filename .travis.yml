@@ -11,5 +11,4 @@ install:
 
 script:
  - dotnet build
- - dotnet test Wavefront.SDK.CSharp.Test/Wavefront.SDK.CSharp.Test.csproj -f netcoreapp2.1
- - dotnet test Wavefront.SDK.CSharp.Test/Wavefront.SDK.CSharp.Test.csproj -f netcoreapp3.1
+ - dotnet test Wavefront.SDK.CSharp.Test/Wavefront.SDK.CSharp.Test.csproj
