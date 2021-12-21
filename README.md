@@ -113,7 +113,6 @@ Although this library is mostly used by the other Wavefront C# SDKs to send data
   </td>
 </tr>
 
-</tbody>
 </table>
 
 ## Prerequisites
