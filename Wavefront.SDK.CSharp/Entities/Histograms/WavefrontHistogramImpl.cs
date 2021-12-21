@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using StatsLib;
+using Wavefront.SDK.CSharp.Entities.StatsLib;
 using Wavefront.SDK.CSharp.Common;
 
 namespace Wavefront.SDK.CSharp.Entities.Histograms

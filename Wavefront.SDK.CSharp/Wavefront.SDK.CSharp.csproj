@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">$(TargetFrameworks);net452;net46</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoWarn>NU1701</NoWarn>
     <PackageId>Wavefront.SDK.CSharp</PackageId>
@@ -27,8 +26,8 @@
     <Folder Include="Proxy\" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="C5" Version="3.0.0-beta" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
-    <PackageReference Include="TDigest" Version="1.0.8" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'net452' or '$(TargetFramework)' == 'net46' ">
     <PackageReference Include="Microsoft.Extensions.Logging" Version="1.0.0" />
